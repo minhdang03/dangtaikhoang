@@ -10,6 +10,7 @@ services:
       NEXTAUTH_SECRET: "${NEXTAUTH_SECRET}"
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://dangtaikhoang.minhdanglu.com}
       NODE_ENV: production
+      AUTH_TRUST_HOST: "true"
     volumes:
       - ./data:/app/data
     healthcheck:
@@ -18,8 +19,14 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    networks:
+      - default
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: dangtaikhoang-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: "${TUNNEL_TOKEN}"
+    networks:
+      - default
