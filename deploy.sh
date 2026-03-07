@@ -5,7 +5,7 @@
 set -e
 
 # Configuration
-REPO_DIR="/Users/$(whoami)/dangtaikhoang"  # Change to your path
+REPO_DIR="/Users/$(whoami)/Documents/NextJS/dangtaikhoang"
 IMAGE_NAME="ghcr.io/minhdang03/dangtaikhoang"
 CONTAINER_NAME="dangtaikhoang-app"
 LOG_FILE="/var/log/dangtaikhoang-deploy.log"
