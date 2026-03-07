@@ -23,4 +23,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET || "local-dev-secret-change-in-prod",
+  trustHost: true,
 });
