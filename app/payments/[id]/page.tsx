@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency, formatMonth, formatDate } from "@/lib/utils";
+import { CopyButton } from "@/components/ui/CopyButton";
 
 interface PaymentDetail {
   id: string;
@@ -111,7 +112,10 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ id: st
               <div className="flex flex-col gap-2 text-sm">
                 <Row label="Ngân hàng" value={payment.bankInfo.bankId} />
                 <Row label="Số tài khoản" value={
-                  <span className="font-mono font-bold text-gray-900">{payment.bankInfo.accountNo}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-gray-900">{payment.bankInfo.accountNo}</span>
+                    <CopyButton text={payment.bankInfo.accountNo} label="Copy" />
+                  </div>
                 } />
                 <Row label="Chủ tài khoản" value={payment.bankInfo.accountName} />
                 <Row label="Số tiền" value={<span className="font-bold text-blue-600">{formatCurrency(payment.amount)}</span>} />

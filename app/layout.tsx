@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { MobileNav } from "@/components/MobileNav";
+import { Toast } from "@/components/ui/Toast";
 import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="vi">
       <body>
         {session && <MobileNav />}
+        {session && <Toast />}
         <main className={session ? "pt-16 pb-20 min-h-screen" : "min-h-screen"}>
           <div className="max-w-lg mx-auto px-4 py-4">
             {children}

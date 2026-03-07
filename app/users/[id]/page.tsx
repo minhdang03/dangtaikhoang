@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { formatCurrency, formatMonth } from "@/lib/utils";
+import { CopyButton } from "@/components/ui/CopyButton";
 
 interface UserDetail {
   id: string;
@@ -91,7 +92,12 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       ) : (
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col gap-3">
-          <Row label="SĐT" value={<a href={`tel:${user.phone}`} className="text-blue-600">{user.phone}</a>} />
+          <Row label="SĐT" value={
+            <div className="flex items-center gap-2">
+              <a href={`tel:${user.phone}`} className="text-blue-600">{user.phone}</a>
+              <CopyButton text={user.phone} label="Copy" />
+            </div>
+          } />
           {user.fbLink && (
             <Row label="Facebook" value={
               <a href={user.fbLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm truncate max-w-40">

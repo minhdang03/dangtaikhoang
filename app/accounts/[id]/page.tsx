@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { formatCurrency, formatDate, daysUntil } from "@/lib/utils";
+import { CopyButton } from "@/components/ui/CopyButton";
 
 interface Slot {
   id: string;
@@ -111,6 +112,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
             >
               {showPassword ? "Ẩn" : "Hiện"}
             </button>
+            <CopyButton text={account.password} label="Copy" />
           </div>
         </div>
         <div className="flex justify-between">

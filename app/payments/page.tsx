@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency, formatMonth, currentMonth } from "@/lib/utils";
+import { toast } from "@/lib/toast";
 
 interface Payment {
   id: string;
@@ -39,8 +40,23 @@ export default function PaymentsPage() {
     });
     const data = await res.json();
     setGenerating(false);
-    alert(`Đã tạo ${data.created} phiếu thu mới.`);
+    toast(`Đã tạo ${data.created} phiếu thu mới`);
     load(month);
+  }
+
+  async function markPaid(id: string) {
+    setPayments(prev => prev.map(p => p.id === id ? { ...p, status: "paid" } : p));
+    const res = await fetch(`/api/payments/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "paid" }),
+    });
+    if (res.ok) {
+      toast("Đã xác nhận thanh toán ✓");
+    } else {
+      setPayments(prev => prev.map(p => p.id === id ? { ...p, status: "pending" } : p));
+      toast("Có lỗi xảy ra", "error");
+    }
   }
 
   const pending = payments.filter(p => p.status === "pending");
@@ -48,7 +64,6 @@ export default function PaymentsPage() {
   const totalPending = pending.reduce((s, p) => s + p.amount, 0);
   const totalPaid = paid.reduce((s, p) => s + p.amount, 0);
 
-  // Generate month options (current + 3 months back)
   const months = Array.from({ length: 4 }, (_, i) => {
     const d = new Date();
     d.setMonth(d.getMonth() - i);
@@ -103,17 +118,20 @@ export default function PaymentsPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {/* Pending first */}
           {pending.length > 0 && (
             <>
               <p className="text-xs font-semibold text-yellow-600 uppercase tracking-wider">Chờ thanh toán</p>
-              {pending.map(p => <PaymentRow key={p.id} payment={p} />)}
+              {pending.map(p => (
+                <PaymentRow key={p.id} payment={p} onMarkPaid={() => markPaid(p.id)} />
+              ))}
             </>
           )}
           {paid.length > 0 && (
             <>
               <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mt-2">Đã thanh toán</p>
-              {paid.map(p => <PaymentRow key={p.id} payment={p} />)}
+              {paid.map(p => (
+                <PaymentRow key={p.id} payment={p} />
+              ))}
             </>
           )}
         </div>
@@ -122,22 +140,29 @@ export default function PaymentsPage() {
   );
 }
 
-function PaymentRow({ payment: p }: { payment: Payment }) {
+function PaymentRow({ payment: p, onMarkPaid }: { payment: Payment; onMarkPaid?: () => void }) {
   return (
-    <Link href={`/payments/${p.id}`}>
-      <div className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-xs border border-gray-100">
-        <span className="text-2xl">{p.account?.service?.icon || "📦"}</span>
+    <div className="bg-white rounded-2xl shadow-xs border border-gray-100 flex items-center gap-3 px-4 py-3">
+      <Link href={`/payments/${p.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+        <span className="text-2xl shrink-0">{p.account?.service?.icon || "📦"}</span>
         <div className="flex-1 min-w-0">
           <p className="font-medium text-gray-900 truncate">{p.user?.name || "?"}</p>
           <p className="text-xs text-gray-400 truncate">{p.account?.label}</p>
         </div>
-        <div className="text-right">
+        <div className="text-right shrink-0">
           <p className="font-semibold text-gray-900">{formatCurrency(p.amount)}</p>
-          <Badge variant={p.status === "paid" ? "green" : "yellow"}>
-            {p.status === "paid" ? "Đã TT" : "Chờ TT"}
-          </Badge>
+          {p.status === "paid" && <Badge variant="green">Đã TT</Badge>}
         </div>
-      </div>
-    </Link>
+      </Link>
+      {onMarkPaid && (
+        <button
+          onClick={onMarkPaid}
+          className="shrink-0 w-9 h-9 rounded-xl bg-green-50 border border-green-200 flex items-center justify-center text-green-600 active:bg-green-100 transition-colors"
+          title="Xác nhận đã thu"
+        >
+          ✓
+        </button>
+      )}
+    </div>
   );
 }
