@@ -97,7 +97,7 @@ export default async function DashboardPage() {
         <section>
           <h2 className="text-xs font-semibold text-red-500 mb-3 uppercase tracking-wider">⚠️ Sắp hết hạn</h2>
           <div className="flex flex-col gap-2">
-            {expiringAccounts.map((acc: { id: string; service?: { icon: string; name: string }; label: string; renewalDate: string; daysLeft: number }) => (
+            {expiringAccounts.map((acc) => (
               <Link key={acc.id} href={`/accounts/${acc.id}`}>
                 <div className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-xs border border-red-100">
                   <span className="text-2xl">{acc.service?.icon || "📦"}</span>
@@ -127,7 +127,7 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {pendingPayments.map((p: { id: string; user?: { name: string }; account?: { service?: { icon: string }; label: string }; amount: number }) => (
+            {pendingPayments.map((p) => (
               <Link key={p.id} href={`/payments/${p.id}`}>
                 <div className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-xs border border-gray-100">
                   <span className="text-2xl">{p.account?.service?.icon || "📦"}</span>
