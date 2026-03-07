@@ -1,6 +1,6 @@
 #!/bin/bash
 # Deploy script for Mac Mini - pull latest image & restart
-# Run periodically with cron: */5 * * * * /path/to/deploy.sh
+# LaunchAgent runs every 60 seconds (com.dangtaikhoang.deploy.plist)
 
 set -e
 
@@ -30,9 +30,9 @@ cd "$REPO_DIR"
 
 # Pull latest code
 log "Pulling latest code from git..."
-git fetch origin main 2>&1 >> "$LOG_FILE" || git fetch origin master 2>&1 >> "$LOG_FILE"
+git fetch origin 2>&1 >> "$LOG_FILE"
 LOCAL=$(git rev-parse HEAD)
-REMOTE=$(git rev-parse origin/HEAD | cut -d' ' -f2)
+REMOTE=$(git rev-parse origin/main 2>/dev/null || git rev-parse origin/master 2>/dev/null)
 
 if [ "$LOCAL" != "$REMOTE" ]; then
   log "New code detected. Deploying..."
