@@ -3,13 +3,15 @@ import { usersDB, subscriptionsDB, paymentsDB, accountsDB, servicesDB } from "@/
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const user = usersDB.getById(id);
+  const user = await usersDB.getById(id);
   if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const subscriptions = subscriptionsDB.getByUser(id);
-  const payments = paymentsDB.getByUser(id);
-  const accounts = accountsDB.getAll();
-  const services = servicesDB.getAll();
+  const [subscriptions, payments, accounts, services] = await Promise.all([
+    subscriptionsDB.getByUser(id),
+    paymentsDB.getByUser(id),
+    accountsDB.getAll(),
+    servicesDB.getAll(),
+  ]);
 
   const subs = subscriptions.map(s => {
     const acc = accounts.find(a => a.id === s.accountId);
@@ -25,7 +27,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json();
-  const updated = usersDB.update(id, {
+  const updated = await usersDB.update(id, {
     name: body.name,
     phone: body.phone,
     fbLink: body.fbLink || "",
@@ -35,6 +37,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  usersDB.delete(id);
+  await usersDB.delete(id);
   return NextResponse.json({ ok: true });
 }

@@ -4,10 +4,13 @@ import { Badge } from "@/components/ui/Badge";
 import { usersDB, subscriptionsDB, paymentsDB } from "@/lib/db";
 import { currentMonth } from "@/lib/utils";
 
-export default function UsersPage() {
-  const users = usersDB.getAll();
-  const subscriptions = subscriptionsDB.getAll().filter(s => s.status === "active");
-  const payments = paymentsDB.getByMonth(currentMonth());
+export default async function UsersPage() {
+  const [users, allSubscriptions, payments] = await Promise.all([
+    usersDB.getAll(),
+    subscriptionsDB.getAll(),
+    paymentsDB.getByMonth(currentMonth()),
+  ]);
+  const subscriptions = allSubscriptions.filter(s => s.status === "active");
 
   const enriched = users.map(u => {
     const userSubs = subscriptions.filter(s => s.userId === u.id);

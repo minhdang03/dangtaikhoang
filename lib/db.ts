@@ -1,154 +1,21 @@
-import fs from "fs";
-import path from "path";
-import { Account, User, Subscription, Payment, Settings, Service } from "./types";
+import { prisma } from "./prisma";
+import type { Service, Account, User, Subscription, Payment, Settings } from "./types";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+// Prisma DateTime → ISO string converters
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toAccount = (a: any): Account => ({ ...a, createdAt: a.createdAt.toISOString() });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toUser = (u: any): User => ({ ...u, createdAt: u.createdAt.toISOString() });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toSub = (s: any): Subscription => ({ ...s, createdAt: s.createdAt.toISOString() });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toPayment = (p: any): Payment => ({
+  ...p,
+  createdAt: p.createdAt.toISOString(),
+  paidAt: p.paidAt ? p.paidAt.toISOString() : null,
+});
 
-function readJSON<T>(filename: string, defaultValue: T): T {
-  const filePath = path.join(DATA_DIR, filename);
-  try {
-    if (!fs.existsSync(filePath)) return defaultValue;
-    const raw = fs.readFileSync(filePath, "utf-8");
-    return JSON.parse(raw) as T;
-  } catch {
-    return defaultValue;
-  }
-}
-
-function writeJSON<T>(filename: string, data: T): void {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(path.join(DATA_DIR, filename), JSON.stringify(data, null, 2));
-}
-
-// --- Services ---
-export const servicesDB = {
-  getAll: () => readJSON<Service[]>("services.json", DEFAULT_SERVICES),
-  getById: (id: string) => servicesDB.getAll().find(s => s.id === id),
-  save: (services: Service[]) => writeJSON("services.json", services),
-  create: (data: Omit<Service, "id">) => {
-    const services = servicesDB.getAll();
-    const newService: Service = { id: crypto.randomUUID(), ...data };
-    services.push(newService);
-    servicesDB.save(services);
-    return newService;
-  },
-  update: (id: string, data: Partial<Service>) => {
-    const services = servicesDB.getAll().map(s => s.id === id ? { ...s, ...data } : s);
-    servicesDB.save(services);
-    return services.find(s => s.id === id);
-  },
-  delete: (id: string) => {
-    const services = servicesDB.getAll().filter(s => s.id !== id);
-    servicesDB.save(services);
-  },
-};
-
-// --- Accounts ---
-export const accountsDB = {
-  getAll: () => readJSON<Account[]>("accounts.json", []),
-  getById: (id: string) => accountsDB.getAll().find(a => a.id === id),
-  save: (accounts: Account[]) => writeJSON("accounts.json", accounts),
-  create: (data: Omit<Account, "id" | "createdAt">) => {
-    const accounts = accountsDB.getAll();
-    const newAccount: Account = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...data };
-    accounts.push(newAccount);
-    accountsDB.save(accounts);
-    return newAccount;
-  },
-  update: (id: string, data: Partial<Account>) => {
-    const accounts = accountsDB.getAll().map(a => a.id === id ? { ...a, ...data } : a);
-    accountsDB.save(accounts);
-    return accounts.find(a => a.id === id);
-  },
-  delete: (id: string) => {
-    const accounts = accountsDB.getAll().filter(a => a.id !== id);
-    accountsDB.save(accounts);
-  },
-};
-
-// --- Users ---
-export const usersDB = {
-  getAll: () => readJSON<User[]>("users.json", []),
-  getById: (id: string) => usersDB.getAll().find(u => u.id === id),
-  save: (users: User[]) => writeJSON("users.json", users),
-  create: (data: Omit<User, "id" | "createdAt">) => {
-    const users = usersDB.getAll();
-    const newUser: User = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...data };
-    users.push(newUser);
-    usersDB.save(users);
-    return newUser;
-  },
-  update: (id: string, data: Partial<User>) => {
-    const users = usersDB.getAll().map(u => u.id === id ? { ...u, ...data } : u);
-    usersDB.save(users);
-    return users.find(u => u.id === id);
-  },
-  delete: (id: string) => {
-    usersDB.save(usersDB.getAll().filter(u => u.id !== id));
-  },
-};
-
-// --- Subscriptions ---
-export const subscriptionsDB = {
-  getAll: () => readJSON<Subscription[]>("subscriptions.json", []),
-  getById: (id: string) => subscriptionsDB.getAll().find(s => s.id === id),
-  getByAccount: (accountId: string) => subscriptionsDB.getAll().filter(s => s.accountId === accountId && s.status === "active"),
-  getByUser: (userId: string) => subscriptionsDB.getAll().filter(s => s.userId === userId),
-  save: (subs: Subscription[]) => writeJSON("subscriptions.json", subs),
-  create: (data: Omit<Subscription, "id" | "createdAt">) => {
-    const subs = subscriptionsDB.getAll();
-    const newSub: Subscription = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...data };
-    subs.push(newSub);
-    subscriptionsDB.save(subs);
-    return newSub;
-  },
-  update: (id: string, data: Partial<Subscription>) => {
-    const subs = subscriptionsDB.getAll().map(s => s.id === id ? { ...s, ...data } : s);
-    subscriptionsDB.save(subs);
-    return subs.find(s => s.id === id);
-  },
-  delete: (id: string) => {
-    subscriptionsDB.save(subscriptionsDB.getAll().filter(s => s.id !== id));
-  },
-};
-
-// --- Payments ---
-export const paymentsDB = {
-  getAll: () => readJSON<Payment[]>("payments.json", []),
-  getById: (id: string) => paymentsDB.getAll().find(p => p.id === id),
-  getByUser: (userId: string) => paymentsDB.getAll().filter(p => p.userId === userId),
-  getByMonth: (month: string) => paymentsDB.getAll().filter(p => p.month === month),
-  save: (payments: Payment[]) => writeJSON("payments.json", payments),
-  create: (data: Omit<Payment, "id" | "createdAt">) => {
-    const payments = paymentsDB.getAll();
-    const newPayment: Payment = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...data };
-    payments.push(newPayment);
-    paymentsDB.save(payments);
-    return newPayment;
-  },
-  update: (id: string, data: Partial<Payment>) => {
-    const payments = paymentsDB.getAll().map(p => p.id === id ? { ...p, ...data } : p);
-    paymentsDB.save(payments);
-    return payments.find(p => p.id === id);
-  },
-  delete: (id: string) => {
-    paymentsDB.save(paymentsDB.getAll().filter(p => p.id !== id));
-  },
-};
-
-// --- Settings ---
-export const settingsDB = {
-  get: () => readJSON<Settings>("settings.json", DEFAULT_SETTINGS),
-  save: (settings: Settings) => writeJSON("settings.json", settings),
-  update: (data: Partial<Settings>) => {
-    const settings = { ...settingsDB.get(), ...data };
-    settingsDB.save(settings);
-    return settings;
-  },
-};
-
-// --- Defaults ---
-const DEFAULT_SERVICES: Service[] = [
+const DEFAULT_SERVICES: Omit<Service, never>[] = [
   { id: "chatgpt", name: "ChatGPT Plus", type: "chatgpt", icon: "🤖" },
   { id: "netflix", name: "Netflix", type: "netflix", icon: "🎬" },
   { id: "google_drive", name: "Google Drive", type: "google_drive", icon: "💾" },
@@ -156,11 +23,183 @@ const DEFAULT_SERVICES: Service[] = [
   { id: "youtube", name: "YouTube Premium", type: "youtube", icon: "▶️" },
 ];
 
-const DEFAULT_SETTINGS: Settings = {
+const DEFAULT_SETTINGS: Omit<Settings, never> = {
   bankId: "MB",
   bankBin: "970422",
   accountNo: "",
   accountName: "",
   reminderDays: 7,
   adminPassword: "admin123",
+};
+
+// --- Services ---
+export const servicesDB = {
+  getAll: async (): Promise<Service[]> => {
+    const services = await prisma.service.findMany({ orderBy: { name: "asc" } });
+    if (services.length > 0) return services as Service[];
+    await prisma.service.createMany({ data: DEFAULT_SERVICES, skipDuplicates: true });
+    return prisma.service.findMany({ orderBy: { name: "asc" } }) as Promise<Service[]>;
+  },
+  getById: async (id: string): Promise<Service | null> => {
+    return prisma.service.findUnique({ where: { id } }) as Promise<Service | null>;
+  },
+  create: async (data: Omit<Service, "id">): Promise<Service> => {
+    return prisma.service.create({ data: { id: crypto.randomUUID(), ...data } }) as Promise<Service>;
+  },
+  update: async (id: string, data: Partial<Service>): Promise<Service | null> => {
+    return prisma.service.update({ where: { id }, data }) as Promise<Service>;
+  },
+  delete: async (id: string): Promise<void> => {
+    await prisma.service.delete({ where: { id } });
+  },
+};
+
+// --- Accounts ---
+export const accountsDB = {
+  getAll: async (): Promise<Account[]> => {
+    const rows = await prisma.account.findMany({ orderBy: { createdAt: "asc" } });
+    return rows.map(toAccount);
+  },
+  getById: async (id: string): Promise<Account | null> => {
+    const row = await prisma.account.findUnique({ where: { id } });
+    return row ? toAccount(row) : null;
+  },
+  create: async (data: Omit<Account, "id" | "createdAt">): Promise<Account> => {
+    const row = await prisma.account.create({ data });
+    return toAccount(row);
+  },
+  update: async (id: string, data: Partial<Account>): Promise<Account | null> => {
+    const row = await prisma.account.update({ where: { id }, data });
+    return toAccount(row);
+  },
+  delete: async (id: string): Promise<void> => {
+    await prisma.account.delete({ where: { id } });
+  },
+};
+
+// --- Users ---
+export const usersDB = {
+  getAll: async (): Promise<User[]> => {
+    const rows = await prisma.user.findMany({ orderBy: { createdAt: "asc" } });
+    return rows.map(toUser);
+  },
+  getById: async (id: string): Promise<User | null> => {
+    const row = await prisma.user.findUnique({ where: { id } });
+    return row ? toUser(row) : null;
+  },
+  create: async (data: Omit<User, "id" | "createdAt">): Promise<User> => {
+    const row = await prisma.user.create({ data });
+    return toUser(row);
+  },
+  update: async (id: string, data: Partial<User>): Promise<User | null> => {
+    const row = await prisma.user.update({ where: { id }, data });
+    return toUser(row);
+  },
+  delete: async (id: string): Promise<void> => {
+    await prisma.user.delete({ where: { id } });
+  },
+};
+
+// --- Subscriptions ---
+export const subscriptionsDB = {
+  getAll: async (): Promise<Subscription[]> => {
+    const rows = await prisma.subscription.findMany({ orderBy: { createdAt: "asc" } });
+    return rows.map(toSub);
+  },
+  getById: async (id: string): Promise<Subscription | null> => {
+    const row = await prisma.subscription.findUnique({ where: { id } });
+    return row ? toSub(row) : null;
+  },
+  getByAccount: async (accountId: string): Promise<Subscription[]> => {
+    const rows = await prisma.subscription.findMany({
+      where: { accountId, status: "active" },
+    });
+    return rows.map(toSub);
+  },
+  getByUser: async (userId: string): Promise<Subscription[]> => {
+    const rows = await prisma.subscription.findMany({ where: { userId } });
+    return rows.map(toSub);
+  },
+  create: async (data: Omit<Subscription, "id" | "createdAt">): Promise<Subscription> => {
+    const row = await prisma.subscription.create({ data });
+    return toSub(row);
+  },
+  update: async (id: string, data: Partial<Subscription>): Promise<Subscription | null> => {
+    const row = await prisma.subscription.update({ where: { id }, data });
+    return toSub(row);
+  },
+  delete: async (id: string): Promise<void> => {
+    await prisma.subscription.delete({ where: { id } });
+  },
+};
+
+// --- Payments ---
+export const paymentsDB = {
+  getAll: async (): Promise<Payment[]> => {
+    const rows = await prisma.payment.findMany({ orderBy: { createdAt: "asc" } });
+    return rows.map(toPayment);
+  },
+  getById: async (id: string): Promise<Payment | null> => {
+    const row = await prisma.payment.findUnique({ where: { id } });
+    return row ? toPayment(row) : null;
+  },
+  getByUser: async (userId: string): Promise<Payment[]> => {
+    const rows = await prisma.payment.findMany({ where: { userId } });
+    return rows.map(toPayment);
+  },
+  getByMonth: async (month: string): Promise<Payment[]> => {
+    const rows = await prisma.payment.findMany({ where: { month } });
+    return rows.map(toPayment);
+  },
+  create: async (data: Omit<Payment, "id" | "createdAt">): Promise<Payment> => {
+    const row = await prisma.payment.create({
+      data: {
+        ...data,
+        paidAt: data.paidAt ? new Date(data.paidAt) : null,
+      },
+    });
+    return toPayment(row);
+  },
+  update: async (id: string, data: Partial<Payment>): Promise<Payment | null> => {
+    const row = await prisma.payment.update({
+      where: { id },
+      data: {
+        ...data,
+        paidAt: data.paidAt !== undefined
+          ? (data.paidAt ? new Date(data.paidAt) : null)
+          : undefined,
+      },
+    });
+    return toPayment(row);
+  },
+  delete: async (id: string): Promise<void> => {
+    await prisma.payment.delete({ where: { id } });
+  },
+};
+
+// --- Settings ---
+export const settingsDB = {
+  get: async (): Promise<Settings> => {
+    const row = await prisma.settings.findUnique({ where: { id: 1 } });
+    if (row) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _, ...settings } = row;
+      return settings as Settings;
+    }
+    await prisma.settings.create({ data: { id: 1, ...DEFAULT_SETTINGS } });
+    return DEFAULT_SETTINGS;
+  },
+  save: async (settings: Settings): Promise<void> => {
+    await prisma.settings.upsert({
+      where: { id: 1 },
+      create: { id: 1, ...settings },
+      update: settings,
+    });
+  },
+  update: async (data: Partial<Settings>): Promise<Settings> => {
+    const current = await settingsDB.get();
+    const updated = { ...current, ...data };
+    await settingsDB.save(updated);
+    return updated;
+  },
 };

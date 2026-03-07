@@ -3,12 +3,14 @@ import { accountsDB, servicesDB, subscriptionsDB, usersDB } from "@/lib/db";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const account = accountsDB.getById(id);
+  const account = await accountsDB.getById(id);
   if (!account) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const service = servicesDB.getById(account.serviceId);
-  const subscriptions = subscriptionsDB.getByAccount(id);
-  const users = usersDB.getAll();
+  const [service, subscriptions, users] = await Promise.all([
+    servicesDB.getById(account.serviceId),
+    subscriptionsDB.getByAccount(id),
+    usersDB.getAll(),
+  ]);
 
   const slots = subscriptions.map(s => ({
     ...s,
@@ -21,7 +23,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json();
-  const updated = accountsDB.update(id, {
+  const updated = await accountsDB.update(id, {
     serviceId: body.serviceId,
     label: body.label,
     email: body.email,
@@ -36,6 +38,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  accountsDB.delete(id);
+  await accountsDB.delete(id);
   return NextResponse.json({ ok: true });
 }

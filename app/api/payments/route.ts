@@ -6,10 +6,12 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const month = searchParams.get("month") || currentMonth();
 
-  const payments = paymentsDB.getByMonth(month);
-  const users = usersDB.getAll();
-  const accounts = accountsDB.getAll();
-  const services = servicesDB.getAll();
+  const [payments, users, accounts, services] = await Promise.all([
+    paymentsDB.getByMonth(month),
+    usersDB.getAll(),
+    accountsDB.getAll(),
+    servicesDB.getAll(),
+  ]);
 
   const result = payments.map(p => ({
     ...p,
@@ -28,9 +30,12 @@ export async function POST(req: NextRequest) {
 
   // Support bulk creation for all active subscriptions
   if (body.bulk && body.month) {
-    const subs = subscriptionsDB.getAll().filter(s => s.status === "active");
-    const accounts = accountsDB.getAll();
-    const existingPayments = paymentsDB.getByMonth(body.month);
+    const [allSubs, accounts, existingPayments] = await Promise.all([
+      subscriptionsDB.getAll(),
+      accountsDB.getAll(),
+      paymentsDB.getByMonth(body.month),
+    ]);
+    const subs = allSubs.filter(s => s.status === "active");
 
     const created = [];
     for (const sub of subs) {
@@ -40,7 +45,7 @@ export async function POST(req: NextRequest) {
       const account = accounts.find(a => a.id === sub.accountId);
       if (!account) continue;
 
-      const payment = paymentsDB.create({
+      const payment = await paymentsDB.create({
         subscriptionId: sub.id,
         userId: sub.userId,
         accountId: sub.accountId,
@@ -55,7 +60,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ created: created.length, payments: created }, { status: 201 });
   }
 
-  const payment = paymentsDB.create({
+  const payment = await paymentsDB.create({
     subscriptionId: body.subscriptionId,
     userId: body.userId,
     accountId: body.accountId,

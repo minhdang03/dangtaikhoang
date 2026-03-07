@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { subscriptionsDB, accountsDB, usersDB } from "@/lib/db";
 
 export async function GET() {
-  const subs = subscriptionsDB.getAll();
-  const accounts = accountsDB.getAll();
-  const users = usersDB.getAll();
+  const [subs, accounts, users] = await Promise.all([
+    subscriptionsDB.getAll(),
+    accountsDB.getAll(),
+    usersDB.getAll(),
+  ]);
 
   const result = subs.map(s => ({
     ...s,
@@ -17,7 +19,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const sub = subscriptionsDB.create({
+  const sub = await subscriptionsDB.create({
     userId: body.userId,
     accountId: body.accountId,
     slotLabel: body.slotLabel || "Slot",

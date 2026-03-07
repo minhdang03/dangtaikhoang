@@ -4,15 +4,18 @@ import { Button } from "@/components/ui/Button";
 import { formatCurrency, formatDate, daysUntil } from "@/lib/utils";
 import { accountsDB, servicesDB, subscriptionsDB } from "@/lib/db";
 
-export default function AccountsPage() {
-  const accounts = accountsDB.getAll();
-  const services = servicesDB.getAll();
-  const subscriptions = subscriptionsDB.getAll().filter(s => s.status === "active");
+export default async function AccountsPage() {
+  const [accounts, services, subscriptions] = await Promise.all([
+    accountsDB.getAll(),
+    servicesDB.getAll(),
+    subscriptionsDB.getAll(),
+  ]);
+  const activeSubscriptions = subscriptions.filter(s => s.status === "active");
 
   const enriched = accounts.map(a => ({
     ...a,
     service: services.find(s => s.id === a.serviceId),
-    activeSlots: subscriptions.filter(s => s.accountId === a.id).length,
+    activeSlots: activeSubscriptions.filter(s => s.accountId === a.id).length,
     daysLeft: daysUntil(a.renewalDate),
   }));
 
