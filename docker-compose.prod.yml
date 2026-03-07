@@ -9,7 +9,7 @@ services:
       - "8083:3000"
     environment:
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?Error: NEXTAUTH_SECRET not set}
+      NEXTAUTH_SECRET: "${NEXTAUTH_SECRET}"
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       NODE_ENV: production
     volumes:
