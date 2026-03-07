@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "8003:3000"
+      - "8083:3000"
     environment:
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-this-secret-in-production}
