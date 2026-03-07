@@ -1,21 +1,50 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, currentMonth, daysUntil } from "@/lib/utils";
+import { accountsDB, usersDB, subscriptionsDB, paymentsDB, servicesDB } from "@/lib/db";
 
-async function getDashboard() {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/dashboard`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
+function getDashboard() {
+  const accounts = accountsDB.getAll();
+  const users = usersDB.getAll();
+  const subscriptions = subscriptionsDB.getAll().filter(s => s.status === "active");
+  const payments = paymentsDB.getAll();
+  const services = servicesDB.getAll();
+  const month = currentMonth();
+
+  const monthPayments = payments.filter(p => p.month === month);
+  const pendingPayments = monthPayments.filter(p => p.status === "pending");
+  const paidPayments = monthPayments.filter(p => p.status === "paid");
+
+  const expiringAccounts = accounts
+    .map(a => ({ ...a, daysLeft: daysUntil(a.renewalDate) }))
+    .filter(a => a.daysLeft <= 7 && a.daysLeft >= 0)
+    .sort((a, b) => a.daysLeft - b.daysLeft);
+
+  return {
+    stats: {
+      totalAccounts: accounts.length,
+      totalUsers: users.length,
+      activeSlots: subscriptions.length,
+      totalRevenue: paidPayments.reduce((sum, p) => sum + p.amount, 0),
+      pendingRevenue: pendingPayments.reduce((sum, p) => sum + p.amount, 0),
+    },
+    expiringAccounts: expiringAccounts.map(a => ({
+      ...a,
+      service: services.find(s => s.id === a.serviceId),
+    })),
+    pendingPayments: pendingPayments.slice(0, 10).map(p => ({
+      ...p,
+      user: users.find(u => u.id === p.userId),
+      account: (() => {
+        const acc = accounts.find(a => a.id === p.accountId);
+        return acc ? { ...acc, service: services.find(s => s.id === acc.serviceId) } : null;
+      })(),
+    })),
+  };
 }
 
 export default async function DashboardPage() {
-  const data = await getDashboard();
+  const data = getDashboard();
 
   if (!data) {
     return (
