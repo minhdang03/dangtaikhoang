@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency, formatDate, currentMonth, daysUntil } from "@/lib/utils";
 import { accountsDB, usersDB, subscriptionsDB, paymentsDB, servicesDB } from "@/lib/db";
+import { PendingOrders } from "@/components/PendingOrders";
 
 async function getDashboard() {
   const [accounts, users, allSubscriptions, payments, services] = await Promise.all([
@@ -94,6 +95,9 @@ export default async function DashboardPage() {
           />
         </div>
       </section>
+
+      {/* Pending shop orders */}
+      <PendingOrders />
 
       {/* Expiring soon */}
       {expiringAccounts.length > 0 && (

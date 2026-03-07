@@ -12,6 +12,7 @@ interface Slot {
   id: string;
   userId: string;
   slotLabel: string;
+  startDate: string;
   status: string;
   user?: { id: string; name: string; phone: string };
 }
@@ -37,7 +38,8 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
   const [showPassword, setShowPassword] = useState(false);
   const [showAddSlot, setShowAddSlot] = useState(false);
   const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
-  const [slotForm, setSlotForm] = useState({ userId: "", slotLabel: "Slot 1" });
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [slotForm, setSlotForm] = useState({ userId: "", slotLabel: "Slot 1", startDate: todayStr });
   const [loading, setLoading] = useState(false);
 
   async function load() {
@@ -57,7 +59,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
     await fetch("/api/subscriptions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...slotForm, accountId: id }),
+      body: JSON.stringify({ ...slotForm, accountId: id, startDate: new Date(slotForm.startDate).toISOString() }),
     });
     setShowAddSlot(false);
     setLoading(false);
@@ -96,9 +98,12 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
 
       {/* Account info */}
       <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col gap-3">
-        <div className="flex justify-between">
+        <div className="flex justify-between items-center">
           <span className="text-sm text-gray-500">Email</span>
-          <span className="text-sm font-medium text-gray-900">{account.email}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-900">{account.email}</span>
+            <CopyButton text={account.email} label="Copy" />
+          </div>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-500">Mật khẩu</span>
@@ -169,6 +174,12 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
               value={slotForm.slotLabel}
               onChange={e => setSlotForm(f => ({ ...f, slotLabel: e.target.value }))}
             />
+            <Input
+              label="Ngày bắt đầu"
+              type="date"
+              value={slotForm.startDate}
+              onChange={e => setSlotForm(f => ({ ...f, startDate: e.target.value }))}
+            />
             <Button onClick={addSlot} loading={loading}>Xác nhận</Button>
           </div>
         )}
@@ -186,7 +197,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 truncate">{slot.user?.name || "?"}</p>
-                  <p className="text-xs text-gray-400">{slot.slotLabel} · {slot.user?.phone}</p>
+                  <p className="text-xs text-gray-400">{slot.slotLabel} · {slot.user?.phone} · từ {formatDate(slot.startDate)}</p>
                 </div>
                 <button
                   onClick={() => removeSlot(slot.id)}

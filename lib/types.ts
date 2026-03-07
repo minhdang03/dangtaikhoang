@@ -60,6 +60,18 @@ export interface Settings {
   adminPassword: string;
 }
 
+export interface Order {
+  id: string;
+  accountId: string;
+  customerName: string;
+  customerPhone: string;
+  customerFb: string;
+  amount: number;
+  status: "pending" | "confirmed" | "expired";
+  createdAt: string;
+  expiresAt: string;
+}
+
 // Enriched types for display
 export interface AccountWithService extends Account {
   service: Service;

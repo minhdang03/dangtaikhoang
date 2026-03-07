@@ -28,6 +28,7 @@ model Account {
   createdAt     DateTime       @default(now())
   subscriptions Subscription[]
   payments      Payment[]
+  orders        Order[]
 }
 
 model User {
@@ -77,4 +78,17 @@ model Settings {
   accountName   String @default("")
   reminderDays  Int    @default(7)
   adminPassword String @default("admin123")
+}
+
+model Order {
+  id            String   @id @default(uuid())
+  accountId     String
+  account       Account  @relation(fields: [accountId], references: [id])
+  customerName  String
+  customerPhone String
+  customerFb    String   @default("")
+  amount        Float
+  status        String   @default("pending") // pending | confirmed | expired
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime
 }

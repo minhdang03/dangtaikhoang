@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import type { Service, Account, User, Subscription, Payment, Settings } from "./types";
+import type { Service, Account, User, Subscription, Payment, Settings, Order } from "./types";
 
 // Prisma DateTime → ISO string converters
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -201,5 +201,47 @@ export const settingsDB = {
     const updated = { ...current, ...data };
     await settingsDB.save(updated);
     return updated;
+  },
+};
+
+// --- Orders ---
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toOrder = (o: any): Order => ({
+  ...o,
+  createdAt: o.createdAt.toISOString(),
+  expiresAt: o.expiresAt.toISOString(),
+});
+
+export const ordersDB = {
+  getAll: async (): Promise<Order[]> => {
+    const rows = await prisma.order.findMany({ orderBy: { createdAt: "desc" } });
+    return rows.map(toOrder);
+  },
+  getPending: async (): Promise<Order[]> => {
+    const rows = await prisma.order.findMany({
+      where: { status: "pending" },
+      orderBy: { createdAt: "asc" },
+    });
+    return rows.map(toOrder);
+  },
+  getById: async (id: string): Promise<Order | null> => {
+    const row = await prisma.order.findUnique({ where: { id } });
+    return row ? toOrder(row) : null;
+  },
+  create: async (data: Omit<Order, "id" | "createdAt">): Promise<Order> => {
+    const row = await prisma.order.create({
+      data: { ...data, expiresAt: new Date(data.expiresAt) },
+    });
+    return toOrder(row);
+  },
+  update: async (id: string, data: Partial<Order>): Promise<Order | null> => {
+    const row = await prisma.order.update({
+      where: { id },
+      data: {
+        ...data,
+        expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
+      },
+    });
+    return toOrder(row);
   },
 };

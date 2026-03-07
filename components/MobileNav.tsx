@@ -19,7 +19,7 @@ export function MobileNav() {
       {/* Top header */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-100 px-4 py-3">
         <div className="flex items-center justify-between max-w-lg mx-auto">
-          <h1 className="text-lg font-bold text-gray-900">📋 Quản lý tài khoản</h1>
+          <Link href="/" className="text-lg font-bold text-gray-900">📋 Quản lý tài khoản</Link>
         </div>
       </header>
 
