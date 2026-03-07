@@ -1,21 +1,19 @@
-version: '3.8'
-
 services:
   app:
     image: ghcr.io/minhdang03/dangtaikhoang:latest
     container_name: dangtaikhoang-app
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "8083:8083"
     environment:
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?Error: NEXTAUTH_SECRET not set}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://dangtaikhoang.minhdanglu.com}
+      NEXTAUTH_SECRET: "${NEXTAUTH_SECRET}"
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://dangtaikhoang.minhdanglu.com}
       NODE_ENV: production
     volumes:
       - ./data:/app/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:8083"]
       interval: 30s
       timeout: 10s
       retries: 3
