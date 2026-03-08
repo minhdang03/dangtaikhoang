@@ -45,6 +45,21 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+
+  // Cascade: delete payments, cancel subscriptions, then delete user
+  const [payments, subscriptions] = await Promise.all([
+    paymentsDB.getByUser(id),
+    subscriptionsDB.getByUser(id),
+  ]);
+
+  // Delete all payments
+  await Promise.all(payments.map(p => paymentsDB.delete(p.id)));
+
+  // Cancel then delete all subscriptions
+  await Promise.all(subscriptions.map(s =>
+    subscriptionsDB.update(s.id, { status: "cancelled" }).then(() => subscriptionsDB.delete(s.id))
+  ));
+
   await usersDB.delete(id);
   return NextResponse.json({ ok: true });
 }

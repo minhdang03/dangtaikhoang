@@ -26,6 +26,8 @@ model Account {
   monthlyFee    Float
   renewalDate   String
   notes         String         @default("")
+  joinLink      String         @default("")
+  requireEmail  Boolean        @default(false)
   createdAt     DateTime       @default(now())
   subscriptions Subscription[]
   payments      Payment[]
@@ -51,6 +53,7 @@ model Subscription {
   account   Account   @relation(fields: [accountId], references: [id])
   slotLabel String
   startDate String
+  endDate   String    @default("")
   duration  Int       @default(1) // months: 1, 3, 6, 12
   status    String    @default("active")
   createdAt DateTime  @default(now())
@@ -74,15 +77,17 @@ model Payment {
 }
 
 model Settings {
-  id            Int    @id @default(1)
-  bankId        String @default("MB")
-  bankBin       String @default("970422")
-  accountNo     String @default("")
-  accountName   String @default("")
-  reminderDays  Int    @default(7)
-  adminPassword String @default("admin123")
-  shopTitle     String @default("Dịch vụ chia sẻ")
-  transferNote  String @default("{sdt}") // template: {sdt} = customer phone
+  id              Int    @id @default(1)
+  bankId          String @default("MB")
+  bankBin         String @default("970422")
+  accountNo       String @default("")
+  accountName     String @default("")
+  reminderDays    Int    @default(7)
+  adminPassword   String @default("admin123")
+  shopTitle       String @default("Dịch vụ chia sẻ")
+  shopDescription String @default("Đăng ký dịch vụ với giá tốt nhất")
+  transferNote    String @default("{sdt}") // template: {sdt} = customer phone
+  ogImage         String @default("")
 }
 
 model Order {
@@ -92,12 +97,26 @@ model Order {
   customerName      String
   customerPhone     String
   customerFb        String   @default("")
+  customerEmail     String   @default("")
   lookupPin         String   @default("")
   amount            Float
   duration          Int      @default(1) // months: 1, 3, 6, 12
+  promoCodeId       String?
   status            String   @default("pending") // pending | confirmed | expired
   customerConfirmed Boolean  @default(false)
   paymentProof      String?  // base64 image data URL
   createdAt         DateTime @default(now())
   expiresAt         DateTime
+}
+
+model PromoCode {
+  id            String    @id @default(uuid())
+  code          String    @unique
+  discountType  String    @default("percent") // "percent" | "fixed"
+  discountValue Float
+  expiresAt     DateTime?
+  maxUses       Int       @default(0) // 0 = unlimited
+  usedCount     Int       @default(0)
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
 }

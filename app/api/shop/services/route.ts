@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { settingsDB } from "@/lib/db";
 
 export async function GET() {
   // Get all accounts with available slots
-  const accounts = await prisma.account.findMany({
-    include: {
-      service: true,
-      _count: { select: { subscriptions: { where: { status: "active" } } } },
-    },
-    orderBy: { createdAt: "asc" },
-  });
+  const [accounts, settings] = await Promise.all([
+    prisma.account.findMany({
+      include: {
+        service: true,
+        _count: { select: { subscriptions: { where: { status: "active" } } } },
+      },
+      orderBy: { createdAt: "asc" },
+    }),
+    settingsDB.get(),
+  ]);
 
   // Filter only accounts with free slots
   const available = accounts
@@ -23,6 +27,7 @@ export async function GET() {
       totalSlots: a.totalSlots,
       usedSlots: a._count.subscriptions,
       freeSlots: a.totalSlots - a._count.subscriptions,
+      requireEmail: a.requireEmail,
     }));
 
   // Group by service type
@@ -32,5 +37,8 @@ export async function GET() {
     grouped[item.serviceType].push(item);
   }
 
-  return NextResponse.json(grouped);
+  return NextResponse.json({
+    services: grouped,
+    shopDescription: settings.shopDescription || "Đăng ký dịch vụ với giá tốt nhất",
+  });
 }

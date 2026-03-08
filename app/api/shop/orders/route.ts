@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateVietQRUrl } from "@/lib/vietqr";
-import { settingsDB } from "@/lib/db";
+import { settingsDB, promoCodesDB } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { accountId, customerName, customerPhone, customerFb, lookupPin, duration } = body;
+  const { accountId, customerName, customerPhone, customerFb, customerEmail, lookupPin, duration, promoCodeId } = body;
 
-  if (!accountId || !customerName || !customerPhone) {
+  if (!accountId || !customerPhone) {
     return NextResponse.json({ error: "Thiếu thông tin" }, { status: 400 });
   }
 
@@ -40,16 +40,38 @@ export async function POST(req: NextRequest) {
   }
 
   const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
-  const totalAmount = account.monthlyFee * durationMonths;
+  let totalAmount = account.monthlyFee * durationMonths;
+
+  // Apply promo code discount
+  let validPromoId: string | null = null;
+  if (promoCodeId) {
+    const promo = await promoCodesDB.getById(promoCodeId);
+    if (promo && promo.active) {
+      const notExpired = !promo.expiresAt || new Date(promo.expiresAt) > new Date();
+      const hasUses = promo.maxUses === 0 || promo.usedCount < promo.maxUses;
+      if (notExpired && hasUses) {
+        if (promo.discountType === "percent") {
+          totalAmount = Math.round(totalAmount * (1 - promo.discountValue / 100));
+        } else {
+          totalAmount = Math.max(0, totalAmount - promo.discountValue);
+        }
+        validPromoId = promo.id;
+        await promoCodesDB.incrementUsage(promo.id);
+      }
+    }
+  }
+
   const order = await prisma.order.create({
     data: {
       accountId,
-      customerName: customerName.trim(),
+      customerName: (customerName || "").trim(),
       customerPhone: customerPhone.trim(),
       customerFb: customerFb?.trim() || "",
+      customerEmail: customerEmail?.trim() || "",
       lookupPin: pin,
       amount: totalAmount,
       duration: durationMonths,
+      promoCodeId: validPromoId,
       status: "pending",
       expiresAt,
     },

@@ -11,6 +11,7 @@ interface OrderDetail {
   amount: number;
   duration: number;
   customerName: string;
+  customerPhone?: string;
   customerConfirmed?: boolean;
   serviceName: string;
   serviceIcon: string;
@@ -170,7 +171,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
           <span className="text-3xl">{order.serviceIcon}</span>
           <div>
             <p className="font-bold text-gray-900">{order.serviceName}</p>
-            <p className="text-sm text-gray-500">Xin chào, {order.customerName}</p>
+            <p className="text-sm text-gray-500">Xin chào, {order.customerName || order.customerPhone}</p>
           </div>
           <div className="ml-auto text-right">
             <p className="text-lg font-bold text-blue-600">{formatCurrency(order.amount)}</p>
@@ -358,7 +359,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                 onClick={() => setShowConfirmDialog(false)}
                 className="w-full py-3 bg-gray-100 text-gray-600 rounded-xl font-medium hover:bg-gray-200 transition-colors"
               >
-                Chưa, tôi nhầm
+                Chưa, tôi lộn
               </button>
             </div>
           </div>

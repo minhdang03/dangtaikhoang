@@ -65,6 +65,8 @@ export async function GET(req: NextRequest) {
       email: s.account.email,
       password: s.account.password,
       slotLabel: s.slotLabel,
+      endDate: s.endDate || "",
+      joinLink: s.account.joinLink || "",
       locked: false,
     }));
 

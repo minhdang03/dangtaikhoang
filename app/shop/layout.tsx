@@ -5,9 +5,17 @@ import { auth } from "@/lib/auth";
 
 export async function generateMetadata() {
   const settings = await settingsDB.get();
+  const title = settings.shopTitle || "Dịch vụ chia sẻ";
+  const description = settings.shopDescription || "Đăng ký dịch vụ với giá tốt nhất";
   return {
-    title: settings.shopTitle || "Dịch vụ chia sẻ",
-    description: "Đăng ký dịch vụ với giá tốt nhất",
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      ...(settings.ogImage ? { images: [{ url: settings.ogImage }] } : {}),
+    },
   };
 }
 

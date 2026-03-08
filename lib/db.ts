@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import type { Service, Account, User, Subscription, Payment, Settings, Order } from "./types";
+import type { Service, Account, User, Subscription, Payment, Settings, Order, PromoCode } from "./types";
 
 // Prisma DateTime → ISO string converters
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -7,7 +7,7 @@ const toAccount = (a: any): Account => ({ ...a, createdAt: a.createdAt.toISOStri
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toUser = (u: any): User => ({ ...u, createdAt: u.createdAt.toISOString() });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toSub = (s: any): Subscription => ({ ...s, duration: s.duration || 1, createdAt: s.createdAt.toISOString() });
+const toSub = (s: any): Subscription => ({ ...s, duration: s.duration || 1, endDate: s.endDate || "", createdAt: s.createdAt.toISOString() });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toPayment = (p: any): Payment => ({
   ...p,
@@ -31,7 +31,9 @@ const DEFAULT_SETTINGS: Omit<Settings, never> = {
   reminderDays: 7,
   adminPassword: "admin123",
   shopTitle: "Dịch vụ chia sẻ",
+  shopDescription: "Đăng ký dịch vụ với giá tốt nhất",
   transferNote: "{sdt}",
+  ogImage: "",
 };
 
 // --- Services ---
@@ -206,6 +208,14 @@ export const settingsDB = {
   },
 };
 
+// --- PromoCode converter ---
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toPromoCode = (p: any): PromoCode => ({
+  ...p,
+  expiresAt: p.expiresAt ? p.expiresAt.toISOString() : null,
+  createdAt: p.createdAt.toISOString(),
+});
+
 // --- Orders ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toOrder = (o: any): Order => ({
@@ -246,5 +256,52 @@ export const ordersDB = {
       },
     });
     return toOrder(row);
+  },
+};
+
+// --- Promo Codes ---
+export const promoCodesDB = {
+  getAll: async (): Promise<PromoCode[]> => {
+    const rows = await prisma.promoCode.findMany({ orderBy: { createdAt: "desc" } });
+    return rows.map(toPromoCode);
+  },
+  getById: async (id: string): Promise<PromoCode | null> => {
+    const row = await prisma.promoCode.findUnique({ where: { id } });
+    return row ? toPromoCode(row) : null;
+  },
+  getByCode: async (code: string): Promise<PromoCode | null> => {
+    const row = await prisma.promoCode.findUnique({ where: { code: code.toUpperCase() } });
+    return row ? toPromoCode(row) : null;
+  },
+  create: async (data: Omit<PromoCode, "id" | "createdAt" | "usedCount">): Promise<PromoCode> => {
+    const row = await prisma.promoCode.create({
+      data: {
+        ...data,
+        code: data.code.toUpperCase(),
+        expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+      },
+    });
+    return toPromoCode(row);
+  },
+  update: async (id: string, data: Partial<PromoCode>): Promise<PromoCode | null> => {
+    const row = await prisma.promoCode.update({
+      where: { id },
+      data: {
+        ...data,
+        expiresAt: data.expiresAt !== undefined
+          ? (data.expiresAt ? new Date(data.expiresAt) : null)
+          : undefined,
+      },
+    });
+    return toPromoCode(row);
+  },
+  delete: async (id: string): Promise<void> => {
+    await prisma.promoCode.delete({ where: { id } });
+  },
+  incrementUsage: async (id: string): Promise<void> => {
+    await prisma.promoCode.update({
+      where: { id },
+      data: { usedCount: { increment: 1 } },
+    });
   },
 };

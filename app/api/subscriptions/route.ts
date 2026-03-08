@@ -19,12 +19,24 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
+  const startDate = body.startDate || new Date().toISOString();
+  const durationMonths = body.duration || 1;
+
+  // Calculate endDate if not provided
+  let endDate = body.endDate || "";
+  if (!endDate) {
+    const end = new Date(startDate);
+    end.setDate(end.getDate() + durationMonths * 30);
+    endDate = end.toISOString();
+  }
+
   const sub = await subscriptionsDB.create({
     userId: body.userId,
     accountId: body.accountId,
     slotLabel: body.slotLabel || "Slot",
-    startDate: body.startDate || new Date().toISOString(),
-    duration: body.duration || 1,
+    startDate,
+    endDate,
+    duration: durationMonths,
     status: "active",
   });
   return NextResponse.json(sub, { status: 201 });

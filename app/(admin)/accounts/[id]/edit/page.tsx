@@ -4,20 +4,19 @@ import { useRouter } from "next/navigation";
 import { Input, Select, TextArea } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
-const SERVICES = [
-  { id: "chatgpt", name: "ChatGPT Plus", icon: "🤖" },
-  { id: "netflix", name: "Netflix", icon: "🎬" },
-  { id: "google_drive", name: "Google Drive", icon: "💾" },
-  { id: "spotify", name: "Spotify", icon: "🎵" },
-  { id: "youtube", name: "YouTube Premium", icon: "▶️" },
-];
+interface ServiceOption {
+  id: string;
+  name: string;
+  icon: string;
+}
 
 export default function EditAccountPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [services, setServices] = useState<ServiceOption[]>([]);
   const [form, setForm] = useState({
-    serviceId: "chatgpt",
+    serviceId: "",
     label: "",
     email: "",
     password: "",
@@ -25,10 +24,16 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
     monthlyFee: "50000",
     renewalDate: "",
     notes: "",
+    joinLink: "",
+    requireEmail: false,
   });
 
   useEffect(() => {
-    fetch(`/api/accounts/${id}`).then(r => r.json()).then(data => {
+    Promise.all([
+      fetch("/api/services").then(r => r.json()),
+      fetch(`/api/accounts/${id}`).then(r => r.json()),
+    ]).then(([svcs, data]) => {
+      setServices(svcs);
       setForm({
         serviceId: data.serviceId,
         label: data.label,
@@ -38,6 +43,8 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
         monthlyFee: String(data.monthlyFee),
         renewalDate: data.renewalDate?.split("T")[0] || "",
         notes: data.notes || "",
+        joinLink: data.joinLink || "",
+        requireEmail: data.requireEmail || false,
       });
     });
   }, [id]);
@@ -67,7 +74,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col gap-4">
           <Select label="Dịch vụ" value={form.serviceId} onChange={set("serviceId")}>
-            {SERVICES.map(s => <option key={s.id} value={s.id}>{s.icon} {s.name}</option>)}
+            {services.map(s => <option key={s.id} value={s.id}>{s.icon} {s.name}</option>)}
           </Select>
           <Input label="Tên gợi nhớ" value={form.label} onChange={set("label")} required />
           <Input label="Email" type="email" value={form.email} onChange={set("email")} required />
@@ -81,6 +88,26 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
           </div>
           <Input label="Ngày gia hạn" type="date" value={form.renewalDate} onChange={set("renewalDate")} required />
           <TextArea label="Ghi chú" value={form.notes} onChange={set("notes")} />
+        </div>
+
+        {/* Invite link settings */}
+        <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col gap-4">
+          <h3 className="font-semibold text-gray-700 text-sm">🔗 Mời tham gia (tùy chọn)</h3>
+          <Input
+            label="Link mời (invite link)"
+            placeholder="https://canva.com/brand/join/..."
+            value={form.joinLink}
+            onChange={set("joinLink")}
+          />
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.requireEmail}
+              onChange={e => setForm(f => ({ ...f, requireEmail: e.target.checked }))}
+              className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">Yêu cầu khách nhập email khi đặt</span>
+          </label>
         </div>
 
         <div className="flex gap-3">

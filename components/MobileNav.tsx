@@ -8,6 +8,7 @@ const navItems = [
   { href: "/accounts", icon: "🔑", label: "Tài khoản" },
   { href: "/users", icon: "👥", label: "Người dùng" },
   { href: "/payments", icon: "💰", label: "Thanh toán" },
+  { href: "/promo-codes", icon: "🎟️", label: "Mã giảm giá" },
   { href: "/settings", icon: "⚙️", label: "Cài đặt" },
 ];
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { paymentsDB, usersDB, accountsDB, servicesDB, settingsDB } from "@/lib/db";
+import { paymentsDB, usersDB, accountsDB, servicesDB, settingsDB, subscriptionsDB } from "@/lib/db";
 import { generateVietQRUrl } from "@/lib/vietqr";
 import { paymentDescription as buildDesc } from "@/lib/utils";
 
@@ -55,6 +55,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const payment = await paymentsDB.getById(id);
+  if (!payment) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Cancel the associated subscription when deleting payment
+  if (payment.subscriptionId) {
+    await subscriptionsDB.update(payment.subscriptionId, { status: "cancelled" });
+  }
+
   await paymentsDB.delete(id);
   return NextResponse.json({ ok: true });
 }

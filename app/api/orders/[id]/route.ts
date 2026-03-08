@@ -36,13 +36,19 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       });
     }
 
-    // Create subscription
+    // Create subscription with calculated endDate
+    const startDate = new Date();
+    const durationMonths = order.duration || 1;
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + durationMonths * 30);
+
     await subscriptionsDB.create({
       userId: user.id,
       accountId: order.accountId,
       slotLabel: "Slot",
-      startDate: new Date().toISOString(),
-      duration: order.duration || 1,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      duration: durationMonths,
       status: "active",
     });
 

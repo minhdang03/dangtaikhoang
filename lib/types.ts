@@ -17,6 +17,8 @@ export interface Account {
   monthlyFee: number;   // VND per slot/month
   renewalDate: string;  // ISO date
   notes: string;
+  joinLink: string;
+  requireEmail: boolean;
   createdAt: string;
 }
 
@@ -35,6 +37,7 @@ export interface Subscription {
   accountId: string;
   slotLabel: string;    // "Slot 1", "Profile A"
   startDate: string;
+  endDate: string;
   duration: number;     // months: 1, 3, 6, 12
   status: "active" | "cancelled";
   createdAt: string;
@@ -58,10 +61,12 @@ export interface Settings {
   bankBin: string;      // numeric bin for VietQR
   accountNo: string;
   accountName: string;
-  reminderDays: number; // days before renewal to remind
+  reminderDays: number;
   adminPassword: string;
-  shopTitle: string;    // Tên shop hiển thị trên header
-  transferNote: string; // Template nội dung CK, {sdt} = SĐT khách
+  shopTitle: string;
+  shopDescription: string;
+  transferNote: string;
+  ogImage: string;
 }
 
 export interface Order {
@@ -70,13 +75,27 @@ export interface Order {
   customerName: string;
   customerPhone: string;
   customerFb: string;
+  customerEmail: string;
   amount: number;
   duration: number;     // months: 1, 3, 6, 12
+  promoCodeId?: string | null;
   status: "pending" | "confirmed" | "expired";
   customerConfirmed: boolean;
   paymentProof?: string | null;
   createdAt: string;
   expiresAt: string;
+}
+
+export interface PromoCode {
+  id: string;
+  code: string;
+  discountType: "percent" | "fixed";
+  discountValue: number;
+  expiresAt: string | null;
+  maxUses: number;
+  usedCount: number;
+  active: boolean;
+  createdAt: string;
 }
 
 // Enriched types for display

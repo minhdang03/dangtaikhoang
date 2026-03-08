@@ -17,7 +17,9 @@ export default function SettingsPage() {
     adminPassword: "",
     newPassword: "",
     shopTitle: "Dịch vụ chia sẻ",
+    shopDescription: "Đăng ký dịch vụ với giá tốt nhất",
     transferNote: "{sdt}",
+    ogImage: "",
   });
 
   useEffect(() => {
@@ -30,7 +32,9 @@ export default function SettingsPage() {
         accountName: data.accountName || "",
         reminderDays: String(data.reminderDays || 7),
         shopTitle: data.shopTitle || "Dịch vụ chia sẻ",
+        shopDescription: data.shopDescription || "Đăng ký dịch vụ với giá tốt nhất",
         transferNote: data.transferNote || "{sdt}",
+        ogImage: data.ogImage || "",
       }));
     });
   }, []);
@@ -53,7 +57,9 @@ export default function SettingsPage() {
       accountName: form.accountName,
       reminderDays: Number(form.reminderDays),
       shopTitle: form.shopTitle,
+      shopDescription: form.shopDescription,
       transferNote: form.transferNote,
+      ogImage: form.ogImage,
     };
     if (form.newPassword) {
       payload.adminPassword = form.newPassword;
@@ -82,6 +88,18 @@ export default function SettingsPage() {
             placeholder="VD: Dịch vụ chia sẻ"
             value={form.shopTitle}
             onChange={set("shopTitle")}
+          />
+          <Input
+            label="Mô tả ngắn (hiển thị dưới header)"
+            placeholder="VD: Đăng ký dịch vụ với giá tốt nhất"
+            value={form.shopDescription}
+            onChange={set("shopDescription")}
+          />
+          <Input
+            label="Ảnh OG (URL ảnh khi share link)"
+            placeholder="https://example.com/og-image.png"
+            value={form.ogImage}
+            onChange={set("ogImage")}
           />
           <Input
             label="Nội dung chuyển khoản"

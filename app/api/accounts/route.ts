@@ -29,6 +29,8 @@ export async function POST(req: NextRequest) {
     monthlyFee: Number(body.monthlyFee),
     renewalDate: body.renewalDate,
     notes: body.notes || "",
+    joinLink: body.joinLink || "",
+    requireEmail: body.requireEmail || false,
   });
   return NextResponse.json(account, { status: 201 });
 }

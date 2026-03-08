@@ -18,6 +18,8 @@ interface Account {
   email: string;
   password: string;
   slotLabel: string;
+  endDate: string;
+  joinLink: string;
   locked: boolean;
 }
 
@@ -33,6 +35,7 @@ interface LookupResult {
 // Individual show/hide password per account
 function AccountCard({ acc }: { acc: Account }) {
   const [show, setShow] = useState(false);
+  const endDateStr = acc.endDate ? new Date(acc.endDate).toLocaleDateString("vi-VN") : "";
   return (
     <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
       <div className="flex items-center gap-3 mb-3">
@@ -41,6 +44,9 @@ function AccountCard({ acc }: { acc: Account }) {
           <p className="font-semibold text-gray-900">{acc.serviceName}</p>
           <p className="text-xs text-gray-400">{acc.slotLabel}</p>
         </div>
+        {endDateStr && (
+          <span className="ml-auto text-xs text-gray-400">HSD: {endDateStr}</span>
+        )}
       </div>
       <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-2.5 text-sm">
         <div className="flex justify-between items-center">
@@ -62,6 +68,16 @@ function AccountCard({ acc }: { acc: Account }) {
           </div>
         </div>
       </div>
+      {acc.joinLink && (
+        <a
+          href={acc.joinLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 w-full block text-center py-2.5 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 transition-colors"
+        >
+          Tham gia nhóm →
+        </a>
+      )}
     </div>
   );
 }
