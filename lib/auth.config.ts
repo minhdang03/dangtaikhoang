@@ -16,7 +16,8 @@ export const authConfig: NextAuthConfig = {
       const isApiShop = nextUrl.pathname.startsWith("/api/shop");
 
       if (isApiAuth || isPublicPay || isShop || isApiShop) return true;
-      if (!isLoggedIn && !isLoginPage) return false; // redirect to /login
+      if (!isLoggedIn && !isLoginPage) return Response.redirect(new URL("/shop", nextUrl)); // khách vào / → shop
+      if (!isLoggedIn && isLoginPage) return true; // cho vào trang login
       if (isLoggedIn && isLoginPage) return Response.redirect(new URL("/", nextUrl));
       return true;
     },
