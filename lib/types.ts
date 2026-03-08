@@ -58,6 +58,7 @@ export interface Settings {
   accountName: string;
   reminderDays: number; // days before renewal to remind
   adminPassword: string;
+  shopTitle: string;    // Tên shop hiển thị trên header
 }
 
 export interface Order {
@@ -68,6 +69,8 @@ export interface Order {
   customerFb: string;
   amount: number;
   status: "pending" | "confirmed" | "expired";
+  customerConfirmed: boolean;
+  paymentProof?: string | null;
   createdAt: string;
   expiresAt: string;
 }

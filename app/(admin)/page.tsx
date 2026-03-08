@@ -83,7 +83,7 @@ export default async function DashboardPage() {
       {/* Stats */}
       <section>
         <h2 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wider">Tổng quan</h2>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard label="Tài khoản" value={stats.totalAccounts} icon="🔑" />
           <StatCard label="Người dùng" value={stats.totalUsers} icon="👥" />
           <StatCard label="Slots đang dùng" value={stats.activeSlots} icon="✅" />

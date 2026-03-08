@@ -16,6 +16,7 @@ export default function SettingsPage() {
     reminderDays: "7",
     adminPassword: "",
     newPassword: "",
+    shopTitle: "Dịch vụ chia sẻ",
   });
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export default function SettingsPage() {
         accountNo: data.accountNo || "",
         accountName: data.accountName || "",
         reminderDays: String(data.reminderDays || 7),
+        shopTitle: data.shopTitle || "Dịch vụ chia sẻ",
       }));
     });
   }, []);
@@ -48,6 +50,7 @@ export default function SettingsPage() {
       accountNo: form.accountNo,
       accountName: form.accountName,
       reminderDays: Number(form.reminderDays),
+      shopTitle: form.shopTitle,
     };
     if (form.newPassword) {
       payload.adminPassword = form.newPassword;
@@ -68,6 +71,17 @@ export default function SettingsPage() {
       <h1 className="text-xl font-bold text-gray-900">Cài đặt</h1>
 
       <form onSubmit={handleSave} className="flex flex-col gap-4">
+        {/* Shop settings */}
+        <section className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col gap-4">
+          <h2 className="font-semibold text-gray-900">🛒 Trang shop</h2>
+          <Input
+            label="Tên shop (hiển thị trên header)"
+            placeholder="VD: Dịch vụ chia sẻ"
+            value={form.shopTitle}
+            onChange={set("shopTitle")}
+          />
+        </section>
+
         {/* Bank settings */}
         <section className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col gap-4">
           <h2 className="font-semibold text-gray-900">🏦 Tài khoản ngân hàng nhận tiền</h2>

@@ -22,6 +22,8 @@ export async function GET() {
       customerPhone: o.customerPhone,
       customerFb: o.customerFb,
       amount: o.amount,
+      customerConfirmed: o.customerConfirmed,
+      paymentProof: o.paymentProof,
       serviceName: o.account.service.name,
       serviceIcon: o.account.service.icon,
       accountLabel: o.account.label,

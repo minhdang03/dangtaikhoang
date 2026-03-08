@@ -5,10 +5,16 @@ import { settingsDB } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { accountId, customerName, customerPhone, customerFb } = body;
+  const { accountId, customerName, customerPhone, customerFb, lookupPin } = body;
 
   if (!accountId || !customerName || !customerPhone) {
     return NextResponse.json({ error: "Thiếu thông tin" }, { status: 400 });
+  }
+
+  // Validate PIN if provided
+  const pin = (lookupPin || "").trim();
+  if (pin && (pin.length !== 4 || !/^\d{4}$/.test(pin))) {
+    return NextResponse.json({ error: "Mã PIN gồm 4 chữ số" }, { status: 400 });
   }
 
   // Check account still has free slots
@@ -34,6 +40,7 @@ export async function POST(req: NextRequest) {
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
       customerFb: customerFb?.trim() || "",
+      lookupPin: pin,
       amount: account.monthlyFee,
       status: "pending",
       expiresAt,

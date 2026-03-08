@@ -30,6 +30,7 @@ const DEFAULT_SETTINGS: Omit<Settings, never> = {
   accountName: "",
   reminderDays: 7,
   adminPassword: "admin123",
+  shopTitle: "Dịch vụ chia sẻ",
 };
 
 // --- Services ---

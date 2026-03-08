@@ -36,6 +36,7 @@ model User {
   name          String
   phone         String
   fbLink        String         @default("")
+  lookupPin     String         @default("")
   createdAt     DateTime       @default(now())
   subscriptions Subscription[]
   payments      Payment[]
@@ -78,17 +79,21 @@ model Settings {
   accountName   String @default("")
   reminderDays  Int    @default(7)
   adminPassword String @default("admin123")
+  shopTitle     String @default("Dịch vụ chia sẻ")
 }
 
 model Order {
-  id            String   @id @default(uuid())
-  accountId     String
-  account       Account  @relation(fields: [accountId], references: [id])
-  customerName  String
-  customerPhone String
-  customerFb    String   @default("")
-  amount        Float
-  status        String   @default("pending") // pending | confirmed | expired
-  createdAt     DateTime @default(now())
-  expiresAt     DateTime
+  id                String   @id @default(uuid())
+  accountId         String
+  account           Account  @relation(fields: [accountId], references: [id])
+  customerName      String
+  customerPhone     String
+  customerFb        String   @default("")
+  lookupPin         String   @default("")
+  amount            Float
+  status            String   @default("pending") // pending | confirmed | expired
+  customerConfirmed Boolean  @default(false)
+  paymentProof      String?  // base64 image data URL
+  createdAt         DateTime @default(now())
+  expiresAt         DateTime
 }

@@ -1,20 +1,24 @@
-import type { Metadata } from "next";
 import { Toast } from "@/components/ui/Toast";
+import { settingsDB } from "@/lib/db";
+import { ShopHeader } from "@/components/ShopHeader";
+import { auth } from "@/lib/auth";
 
-export const metadata: Metadata = {
-  title: "Dịch vụ chia sẻ",
-  description: "Đăng ký dịch vụ ChatGPT, Netflix, Spotify với giá tốt nhất",
-};
+export async function generateMetadata() {
+  const settings = await settingsDB.get();
+  return {
+    title: settings.shopTitle || "Dịch vụ chia sẻ",
+    description: "Đăng ký dịch vụ với giá tốt nhất",
+  };
+}
 
-export default function ShopLayout({ children }: { children: React.ReactNode }) {
+export default async function ShopLayout({ children }: { children: React.ReactNode }) {
+  const [settings, session] = await Promise.all([settingsDB.get(), auth()]);
+  const isAdmin = !!session;
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-100 px-4 py-3 sticky top-0 z-40">
-        <div className="max-w-lg mx-auto">
-          <h1 className="text-lg font-bold text-gray-900">🛒 Dịch vụ chia sẻ</h1>
-        </div>
-      </header>
-      <main className="max-w-lg mx-auto px-4 py-4">
+      <ShopHeader title={settings.shopTitle || "Dịch vụ chia sẻ"} isAdmin={isAdmin} />
+      <main className="max-w-3xl mx-auto px-4 py-6 sm:px-6">
         {children}
       </main>
       <Toast />

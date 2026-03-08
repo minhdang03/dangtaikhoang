@@ -25,7 +25,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           name: order.customerName,
           phone: order.customerPhone,
           fbLink: order.customerFb,
+          lookupPin: order.lookupPin,
         },
+      });
+    } else if (order.lookupPin) {
+      // Update PIN if order has one (latest PIN wins)
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lookupPin: order.lookupPin },
       });
     }
 

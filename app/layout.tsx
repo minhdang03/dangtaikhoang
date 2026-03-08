@@ -1,12 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { MobileNav } from "@/components/MobileNav";
-import { Toast } from "@/components/ui/Toast";
-import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Quản lý tài khoản chia sẻ",
-  description: "Quản lý tài khoản ChatGPT, Netflix, Google Drive cho gia đình và bạn bè",
+  title: "Đăng Tài Khoảng",
+  description: "Dịch vụ chia sẻ tài khoản ChatGPT, Netflix, Spotify",
 };
 
 export const viewport: Viewport = {
@@ -15,20 +12,10 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
-      <body>
-        {session && <MobileNav />}
-        {session && <Toast />}
-        <main className={session ? "pt-16 pb-20 min-h-screen" : "min-h-screen"}>
-          <div className="max-w-lg mx-auto px-4 py-4">
-            {children}
-          </div>
-        </main>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
