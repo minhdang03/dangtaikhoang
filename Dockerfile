@@ -29,8 +29,9 @@ COPY --from=builder /app/prisma ./prisma
 # Prisma runtime client
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
-# Prisma CLI (for migrate deploy)
+# Prisma CLI + engines (required to run migrate deploy)
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
 
 EXPOSE 8083
 ENV PORT=8083
