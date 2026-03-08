@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
     name: body.name,
     phone: body.phone,
     fbLink: body.fbLink || "",
+    lookupPin: "",
   });
   return NextResponse.json(user, { status: 201 });
 }

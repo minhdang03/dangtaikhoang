@@ -91,5 +91,6 @@ export async function GET(req: NextRequest) {
     accountCount,
     customerName: user?.name || (activeOrders[0] ? pendingOrders[0]?.customerName : null) || null,
     verified: false,
+    hasPin: user ? !!user.lookupPin : null, // null = user not found, false = no pin set, true = pin set
   });
 }

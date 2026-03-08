@@ -27,6 +27,7 @@ interface LookupResult {
   accountCount: number;
   customerName: string | null;
   verified: boolean;
+  hasPin: boolean | null; // null=user not found, false=no pin set, true=pin set
 }
 
 // Individual show/hide password per account
@@ -238,7 +239,20 @@ export default function LookupPage() {
               {/* Not verified yet */}
               {!result.verified && (
                 <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                  {!showUnlockForm ? (
+                  {/* No PIN set — show contact admin message */}
+                  {result.hasPin === false ? (
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center text-xl shrink-0">
+                        ⚠️
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">Chưa có mã PIN</p>
+                        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                          Đơn hàng này chưa được đặt mã PIN tra cứu. Vui lòng liên hệ admin để được hỗ trợ đặt lại PIN.
+                        </p>
+                      </div>
+                    </div>
+                  ) : !showUnlockForm ? (
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-xl shrink-0">
                         🔒

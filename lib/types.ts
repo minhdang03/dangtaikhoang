@@ -25,6 +25,7 @@ export interface User {
   name: string;
   phone: string;
   fbLink: string;
+  lookupPin: string;
   createdAt: string;
 }
 

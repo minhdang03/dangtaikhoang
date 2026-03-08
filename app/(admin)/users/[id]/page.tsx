@@ -13,6 +13,7 @@ interface UserDetail {
   name: string;
   phone: string;
   fbLink: string;
+  lookupPin: string;
   subscriptions: Array<{
     id: string;
     slotLabel: string;
@@ -36,11 +37,18 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   const [form, setForm] = useState({ name: "", phone: "", fbLink: "" });
   const [loading, setLoading] = useState(false);
 
+  // PIN management
+  const [pinInput, setPinInput] = useState("");
+  const [pinLoading, setPinLoading] = useState(false);
+  const [pinSaved, setPinSaved] = useState(false);
+  const [showCurrentPin, setShowCurrentPin] = useState(false);
+
   async function load() {
     const res = await fetch(`/api/users/${id}`);
     const data = await res.json();
     setUser(data);
     setForm({ name: data.name, phone: data.phone, fbLink: data.fbLink || "" });
+    setPinInput("");
   }
 
   useEffect(() => { load(); }, [id]);
@@ -54,6 +62,21 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     });
     setEditing(false);
     setLoading(false);
+    load();
+  }
+
+  async function handlePinSave() {
+    const p = pinInput.trim();
+    if (p && (p.length !== 4 || !/^\d{4}$/.test(p))) return;
+    setPinLoading(true);
+    await fetch(`/api/users/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...form, lookupPin: p }),
+    });
+    setPinLoading(false);
+    setPinSaved(true);
+    setTimeout(() => setPinSaved(false), 2000);
     load();
   }
 
@@ -107,6 +130,57 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           )}
         </div>
       )}
+
+      {/* PIN management */}
+      <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-gray-900">🔐 Mã PIN tra cứu</h2>
+          {user.lookupPin ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-mono text-gray-700">
+                {showCurrentPin ? user.lookupPin : "••••"}
+              </span>
+              <button
+                onClick={() => setShowCurrentPin(s => !s)}
+                className="text-xs text-blue-600 underline"
+              >
+                {showCurrentPin ? "Ẩn" : "Xem"}
+              </button>
+            </div>
+          ) : (
+            <span className="text-xs bg-orange-50 text-orange-600 border border-orange-200 px-2 py-1 rounded-full font-medium">
+              Chưa đặt PIN
+            </span>
+          )}
+        </div>
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <label className="block text-xs text-gray-500 mb-1">
+              {user.lookupPin ? "Đặt PIN mới (để xóa PIN, để trống)" : "Đặt PIN mới (4 số)"}
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              placeholder="VD: 1234"
+              value={pinInput}
+              onChange={e => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-base font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+            />
+          </div>
+          <Button
+            onClick={handlePinSave}
+            loading={pinLoading}
+            disabled={pinInput.length > 0 && pinInput.length < 4}
+            size="sm"
+          >
+            {pinSaved ? "✅ Đã lưu" : user.lookupPin ? "Cập nhật" : "Đặt PIN"}
+          </Button>
+        </div>
+        <p className="text-xs text-gray-400">
+          Khách dùng PIN này để xem email & mật khẩu tại trang Tra cứu đơn hàng.
+        </p>
+      </div>
 
       {/* Active subscriptions */}
       <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">

@@ -123,15 +123,15 @@ export default function ShopPage() {
                   <div className="text-3xl">{slot.serviceIcon}</div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900">{slot.serviceName}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-sm font-bold text-blue-600">{formatCurrency(slot.monthlyFee)}/tháng</span>
-                      <span className="text-xs text-gray-300">·</span>
-                      <span className="text-xs text-green-600 font-medium">Còn {slot.freeSlots} slot</span>
+                    <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                      <span className="text-sm font-bold text-blue-600 whitespace-nowrap">{formatCurrency(slot.monthlyFee)}/tháng</span>
+                      <span className="text-xs text-gray-300 hidden sm:inline">·</span>
+                      <span className="text-xs text-green-600 font-medium whitespace-nowrap">Còn {slot.freeSlots} slot</span>
                     </div>
                   </div>
                   <button
                     onClick={() => { setSelected(slot); setForm({ customerName: "", customerPhone: "", customerFb: "", lookupPin: "" }); setExistingOrder(null); }}
-                    className="shrink-0 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 active:bg-blue-800 transition-colors"
+                    className="shrink-0 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors"
                   >
                     Đặt slot
                   </button>
@@ -230,9 +230,15 @@ export default function ShopPage() {
                   onChange={e => setForm(f => ({ ...f, lookupPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
                 />
-                <p className="text-xs text-gray-400 mt-1.5">
-                  💡 Tự đặt 4 số dễ nhớ. Dùng để tra cứu tài khoản sau khi admin duyệt.
-                </p>
+                {form.lookupPin.length === 0 ? (
+                  <p className="text-xs text-amber-600 mt-1.5">
+                    ⚠️ Nên đặt PIN để tra cứu tài khoản sau. Nếu bỏ trống, bạn sẽ cần liên hệ admin để lấy thông tin.
+                  </p>
+                ) : form.lookupPin.length === 4 ? (
+                  <p className="text-xs text-green-600 mt-1.5">✅ PIN đã đặt. Ghi nhớ để dùng khi tra cứu.</p>
+                ) : (
+                  <p className="text-xs text-gray-400 mt-1.5">💡 Nhập đủ 4 số.</p>
+                )}
               </div>
             </div>
 

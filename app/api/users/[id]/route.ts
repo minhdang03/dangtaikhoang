@@ -27,11 +27,19 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json();
-  const updated = await usersDB.update(id, {
+
+  // Build update payload
+  const data: Parameters<typeof usersDB.update>[1] = {
     name: body.name,
     phone: body.phone,
     fbLink: body.fbLink || "",
-  });
+  };
+  // lookupPin reset by admin (optional field)
+  if (body.lookupPin !== undefined) {
+    data.lookupPin = body.lookupPin;
+  }
+
+  const updated = await usersDB.update(id, data);
   return NextResponse.json(updated);
 }
 
