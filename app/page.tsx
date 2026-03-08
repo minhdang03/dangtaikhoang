@@ -2,13 +2,17 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency, formatDate, currentMonth, daysUntil } from "@/lib/utils";
 import { accountsDB, usersDB, subscriptionsDB, paymentsDB, servicesDB } from "@/lib/db";
+import { PendingOrders } from "@/components/PendingOrders";
 
-function getDashboard() {
-  const accounts = accountsDB.getAll();
-  const users = usersDB.getAll();
-  const subscriptions = subscriptionsDB.getAll().filter(s => s.status === "active");
-  const payments = paymentsDB.getAll();
-  const services = servicesDB.getAll();
+async function getDashboard() {
+  const [accounts, users, allSubscriptions, payments, services] = await Promise.all([
+    accountsDB.getAll(),
+    usersDB.getAll(),
+    subscriptionsDB.getAll(),
+    paymentsDB.getAll(),
+    servicesDB.getAll(),
+  ]);
+  const subscriptions = allSubscriptions.filter(s => s.status === "active");
   const month = currentMonth();
 
   const monthPayments = payments.filter(p => p.month === month);
@@ -44,7 +48,7 @@ function getDashboard() {
 }
 
 export default async function DashboardPage() {
-  const data = getDashboard();
+  const data = await getDashboard();
 
   if (!data) {
     return (
@@ -91,6 +95,9 @@ export default async function DashboardPage() {
           />
         </div>
       </section>
+
+      {/* Pending shop orders */}
+      <PendingOrders />
 
       {/* Expiring soon */}
       {expiringAccounts.length > 0 && (

@@ -5,13 +5,15 @@ import { paymentDescription as buildDesc } from "@/lib/utils";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const payment = paymentsDB.getById(id);
+  const payment = await paymentsDB.getById(id);
   if (!payment) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const user = usersDB.getById(payment.userId);
-  const account = accountsDB.getById(payment.accountId);
-  const service = account ? servicesDB.getById(account.serviceId) : null;
-  const settings = settingsDB.get();
+  const [user, account, settings] = await Promise.all([
+    usersDB.getById(payment.userId),
+    accountsDB.getById(payment.accountId),
+    settingsDB.get(),
+  ]);
+  const service = account ? await servicesDB.getById(account.serviceId) : null;
 
   let qrUrl = null;
   if (payment.status === "pending" && settings.accountNo && user && account && service) {
@@ -47,12 +49,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (body.note !== undefined) updateData.note = body.note;
   if (body.status === "paid") updateData.paidAt = new Date().toISOString();
 
-  const updated = paymentsDB.update(id, updateData);
+  const updated = await paymentsDB.update(id, updateData);
   return NextResponse.json(updated);
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  paymentsDB.delete(id);
+  await paymentsDB.delete(id);
   return NextResponse.json({ ok: true });
 }

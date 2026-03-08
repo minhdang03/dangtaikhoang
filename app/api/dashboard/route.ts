@@ -3,11 +3,14 @@ import { accountsDB, usersDB, subscriptionsDB, paymentsDB, servicesDB } from "@/
 import { currentMonth, daysUntil } from "@/lib/utils";
 
 export async function GET() {
-  const accounts = accountsDB.getAll();
-  const users = usersDB.getAll();
-  const subscriptions = subscriptionsDB.getAll().filter(s => s.status === "active");
-  const payments = paymentsDB.getAll();
-  const services = servicesDB.getAll();
+  const [accounts, users, allSubscriptions, payments, services] = await Promise.all([
+    accountsDB.getAll(),
+    usersDB.getAll(),
+    subscriptionsDB.getAll(),
+    paymentsDB.getAll(),
+    servicesDB.getAll(),
+  ]);
+  const subscriptions = allSubscriptions.filter(s => s.status === "active");
   const month = currentMonth();
 
   const monthPayments = payments.filter(p => p.month === month);

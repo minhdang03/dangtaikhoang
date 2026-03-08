@@ -1,0 +1,70 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { generateVietQRUrl } from "@/lib/vietqr";
+import { settingsDB } from "@/lib/db";
+
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const { accountId, customerName, customerPhone, customerFb } = body;
+
+  if (!accountId || !customerName || !customerPhone) {
+    return NextResponse.json({ error: "Thiếu thông tin" }, { status: 400 });
+  }
+
+  // Check account still has free slots
+  const account = await prisma.account.findUnique({
+    where: { id: accountId },
+    include: {
+      service: true,
+      _count: { select: { subscriptions: { where: { status: "active" } } } },
+    },
+  });
+
+  if (!account) {
+    return NextResponse.json({ error: "Không tìm thấy dịch vụ" }, { status: 404 });
+  }
+  if (account._count.subscriptions >= account.totalSlots) {
+    return NextResponse.json({ error: "Hết slot, vui lòng chọn dịch vụ khác" }, { status: 409 });
+  }
+
+  const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
+  const order = await prisma.order.create({
+    data: {
+      accountId,
+      customerName: customerName.trim(),
+      customerPhone: customerPhone.trim(),
+      customerFb: customerFb?.trim() || "",
+      amount: account.monthlyFee,
+      status: "pending",
+      expiresAt,
+    },
+  });
+
+  // Generate QR URL
+  const settings = await settingsDB.get();
+  let qrUrl = null;
+  if (settings.accountNo && settings.bankBin) {
+    const desc = `DK ${account.service.name} ${customerPhone.trim().slice(-4)}`;
+    qrUrl = generateVietQRUrl({
+      bankBin: settings.bankBin,
+      accountNo: settings.accountNo,
+      accountName: settings.accountName,
+      amount: account.monthlyFee,
+      description: desc,
+    });
+  }
+
+  return NextResponse.json({
+    id: order.id,
+    amount: order.amount,
+    serviceName: account.service.name,
+    serviceIcon: account.service.icon,
+    qrUrl,
+    bankInfo: {
+      bankId: settings.bankId,
+      accountNo: settings.accountNo,
+      accountName: settings.accountName,
+    },
+    expiresAt: expiresAt.toISOString(),
+  }, { status: 201 });
+}

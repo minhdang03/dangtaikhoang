@@ -11,6 +11,8 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Generate Prisma client before building
+RUN npx prisma generate
 RUN npm run build
 
 # Production image
@@ -22,11 +24,17 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Create data directory for JSON storage
-RUN mkdir -p /app/data
+# Prisma: schema + migrations (for migrate deploy at startup)
+COPY --from=builder /app/prisma ./prisma
+# Prisma runtime client
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
+# Prisma CLI (for migrate deploy)
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 
 EXPOSE 8083
 ENV PORT=8083
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# Run migrations then start the app
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]

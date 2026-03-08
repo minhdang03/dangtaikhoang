@@ -1,19 +1,43 @@
+"use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { usersDB, subscriptionsDB, paymentsDB } from "@/lib/db";
-import { currentMonth } from "@/lib/utils";
+
+interface User {
+  id: string;
+  name: string;
+  phone: string;
+  slotCount: number;
+  hasPending: boolean;
+}
 
 export default function UsersPage() {
-  const users = usersDB.getAll();
-  const subscriptions = subscriptionsDB.getAll().filter(s => s.status === "active");
-  const payments = paymentsDB.getByMonth(currentMonth());
+  const [users, setUsers] = useState<User[]>([]);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const enriched = users.map(u => {
-    const userSubs = subscriptions.filter(s => s.userId === u.id);
-    const userPayments = payments.filter(p => p.userId === u.id);
-    const hasPending = userPayments.some(p => p.status === "pending");
-    return { ...u, slotCount: userSubs.length, hasPending };
+  useEffect(() => {
+    // Fetch users + subscriptions + payments in parallel
+    Promise.all([
+      fetch("/api/users").then(r => r.json()),
+      fetch("/api/subscriptions").then(r => r.json()),
+      fetch(`/api/payments?month=${new Date().toISOString().slice(0, 7)}`).then(r => r.json()),
+    ]).then(([usersData, subsData, paymentsData]) => {
+      const activeSubs = subsData.filter((s: { status: string }) => s.status === "active");
+      const enriched = usersData.map((u: { id: string; name: string; phone: string }) => ({
+        ...u,
+        slotCount: activeSubs.filter((s: { userId: string }) => s.userId === u.id).length,
+        hasPending: paymentsData.some((p: { userId: string; status: string }) => p.userId === u.id && p.status === "pending"),
+      }));
+      setUsers(enriched);
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = users.filter(u => {
+    const q = query.toLowerCase();
+    return u.name.toLowerCase().includes(q) || u.phone.includes(q);
   });
 
   return (
@@ -25,7 +49,20 @@ export default function UsersPage() {
         </Link>
       </div>
 
-      {enriched.length === 0 ? (
+      {/* Search */}
+      {users.length > 0 && (
+        <input
+          type="search"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Tìm tên, số điện thoại..."
+          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+        />
+      )}
+
+      {loading ? (
+        <div className="text-center py-8 text-gray-400">Đang tải...</div>
+      ) : users.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center shadow-xs border border-gray-100">
           <div className="text-4xl mb-3">👥</div>
           <p className="text-gray-500">Chưa có người dùng nào.</p>
@@ -33,9 +70,11 @@ export default function UsersPage() {
             <Button className="mt-4">Thêm người đầu tiên</Button>
           </Link>
         </div>
+      ) : filtered.length === 0 ? (
+        <p className="text-center py-6 text-gray-400 text-sm">Không tìm thấy kết quả nào.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {enriched.map(u => (
+          {filtered.map(u => (
             <Link key={u.id} href={`/users/${u.id}`}>
               <div className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-xs border border-gray-100">
                 <div className="w-11 h-11 bg-blue-100 rounded-full flex items-center justify-center text-lg font-bold text-blue-700 shrink-0">
