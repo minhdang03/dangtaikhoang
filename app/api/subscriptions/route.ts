@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     accountId: body.accountId,
     slotLabel: body.slotLabel || "Slot",
     startDate: body.startDate || new Date().toISOString(),
+    duration: body.duration || 1,
     status: "active",
   });
   return NextResponse.json(sub, { status: 201 });

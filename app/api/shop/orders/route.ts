@@ -5,10 +5,16 @@ import { settingsDB } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { accountId, customerName, customerPhone, customerFb, lookupPin } = body;
+  const { accountId, customerName, customerPhone, customerFb, lookupPin, duration } = body;
 
   if (!accountId || !customerName || !customerPhone) {
     return NextResponse.json({ error: "Thiếu thông tin" }, { status: 400 });
+  }
+
+  // Validate duration
+  const durationMonths = duration || 1;
+  if (![1, 3, 6, 12].includes(durationMonths)) {
+    return NextResponse.json({ error: "Thời hạn không hợp lệ" }, { status: 400 });
   }
 
   // Validate PIN if provided
@@ -34,6 +40,7 @@ export async function POST(req: NextRequest) {
   }
 
   const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
+  const totalAmount = account.monthlyFee * durationMonths;
   const order = await prisma.order.create({
     data: {
       accountId,
@@ -41,7 +48,8 @@ export async function POST(req: NextRequest) {
       customerPhone: customerPhone.trim(),
       customerFb: customerFb?.trim() || "",
       lookupPin: pin,
-      amount: account.monthlyFee,
+      amount: totalAmount,
+      duration: durationMonths,
       status: "pending",
       expiresAt,
     },
@@ -57,7 +65,7 @@ export async function POST(req: NextRequest) {
       bankBin: settings.bankBin,
       accountNo: settings.accountNo,
       accountName: settings.accountName,
-      amount: account.monthlyFee,
+      amount: totalAmount,
       description: transferNote,
     });
   }
@@ -65,6 +73,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     id: order.id,
     amount: order.amount,
+    duration: order.duration,
     serviceName: account.service.name,
     serviceIcon: account.service.icon,
     qrUrl,

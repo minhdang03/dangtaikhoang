@@ -35,6 +35,7 @@ export interface Subscription {
   accountId: string;
   slotLabel: string;    // "Slot 1", "Profile A"
   startDate: string;
+  duration: number;     // months: 1, 3, 6, 12
   status: "active" | "cancelled";
   createdAt: string;
 }
@@ -70,6 +71,7 @@ export interface Order {
   customerPhone: string;
   customerFb: string;
   amount: number;
+  duration: number;     // months: 1, 3, 6, 12
   status: "pending" | "confirmed" | "expired";
   customerConfirmed: boolean;
   paymentProof?: string | null;

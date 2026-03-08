@@ -50,6 +50,7 @@ model Subscription {
   account   Account   @relation(fields: [accountId], references: [id])
   slotLabel String
   startDate String
+  duration  Int       @default(1) // months: 1, 3, 6, 12
   status    String    @default("active")
   createdAt DateTime  @default(now())
   payments  Payment[]
@@ -92,6 +93,7 @@ model Order {
   customerFb        String   @default("")
   lookupPin         String   @default("")
   amount            Float
+  duration          Int      @default(1) // months: 1, 3, 6, 12
   status            String   @default("pending") // pending | confirmed | expired
   customerConfirmed Boolean  @default(false)
   paymentProof      String?  // base64 image data URL

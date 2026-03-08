@@ -15,17 +15,18 @@ interface ServiceSlot {
 }
 
 interface OrderForm {
-  customerName: string;
   customerPhone: string;
-  customerFb: string;
   lookupPin: string;
+  customerName: string;
+  duration: number;
+  customerFb: string;
 }
 
 export default function ShopPage() {
   const [grouped, setGrouped] = useState<Record<string, ServiceSlot[]>>({});
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ServiceSlot | null>(null);
-  const [form, setForm] = useState<OrderForm>({ customerName: "", customerPhone: "", customerFb: "", lookupPin: "" });
+  const [form, setForm] = useState<OrderForm>({ customerPhone: "", lookupPin: "", customerName: "", duration: 1, customerFb: "" });
   const [submitting, setSubmitting] = useState(false);
   const [existingOrder, setExistingOrder] = useState<{ id: string; serviceName: string } | null>(null);
   const [checkingPhone, setCheckingPhone] = useState(false);
@@ -134,7 +135,7 @@ export default function ShopPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => { setSelected(slot); setForm({ customerName: "", customerPhone: "", customerFb: "", lookupPin: "" }); setExistingOrder(null); }}
+                    onClick={() => { setSelected(slot); setForm({ customerPhone: "", lookupPin: "", customerName: "", duration: 1, customerFb: "" }); setExistingOrder(null); }}
                     className="shrink-0 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors"
                   >
                     Đặt slot
@@ -175,17 +176,32 @@ export default function ShopPage() {
             </div>
 
             <div className="flex flex-col gap-3">
+              {/* PIN field — MOVED TO TOP */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tên của bạn *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mã PIN tra cứu <span className="text-red-400 font-normal">*</span> <span className="text-gray-400 font-normal">(4 số, để xem tài khoản sau)</span>
+                </label>
                 <input
                   type="text"
-                  placeholder="Nguyễn Văn A"
-                  value={form.customerName}
-                  onChange={e => setForm(f => ({ ...f, customerName: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                  inputMode="numeric"
+                  pattern="\d{4}"
+                  maxLength={4}
+                  placeholder="VD: 1234"
+                  value={form.lookupPin}
+                  onChange={e => setForm(f => ({ ...f, lookupPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
                   autoFocus
                 />
+                {form.lookupPin.length === 0 ? (
+                  <p className="text-xs text-gray-400 mt-1.5">💡 Tự đặt 4 số dễ nhớ. Bắt buộc để xem tài khoản sau khi admin duyệt.</p>
+                ) : form.lookupPin.length === 4 ? (
+                  <p className="text-xs text-green-600 mt-1.5">✅ Ghi nhớ PIN này để tra cứu tài khoản.</p>
+                ) : (
+                  <p className="text-xs text-red-500 mt-1.5">Nhập đủ 4 số.</p>
+                )}
               </div>
+
+              {/* Phone field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">SĐT / Zalo *</label>
                 <input
@@ -210,6 +226,35 @@ export default function ShopPage() {
                   </div>
                 )}
               </div>
+
+              {/* Name field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tên của bạn *</label>
+                <input
+                  type="text"
+                  placeholder="Nguyễn Văn A"
+                  value={form.customerName}
+                  onChange={e => setForm(f => ({ ...f, customerName: e.target.value }))}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                />
+              </div>
+
+              {/* Duration selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Thời hạn đăng ký *</label>
+                <select
+                  value={form.duration}
+                  onChange={e => setForm(f => ({ ...f, duration: parseInt(e.target.value) }))}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                >
+                  <option value={1}>1 tháng — {formatCurrency(selected.monthlyFee * 1)}</option>
+                  <option value={3}>3 tháng — {formatCurrency(selected.monthlyFee * 3)}</option>
+                  <option value={6}>6 tháng — {formatCurrency(selected.monthlyFee * 6)}</option>
+                  <option value={12}>12 tháng — {formatCurrency(selected.monthlyFee * 12)}</option>
+                </select>
+              </div>
+
+              {/* Facebook field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Link Facebook (tùy chọn)</label>
                 <input
@@ -220,28 +265,6 @@ export default function ShopPage() {
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mã PIN tra cứu <span className="text-red-400 font-normal">*</span> <span className="text-gray-400 font-normal">(4 số, để xem tài khoản sau)</span>
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="\d{4}"
-                  maxLength={4}
-                  placeholder="VD: 1234"
-                  value={form.lookupPin}
-                  onChange={e => setForm(f => ({ ...f, lookupPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
-                />
-                {form.lookupPin.length === 0 ? (
-                  <p className="text-xs text-gray-400 mt-1.5">💡 Tự đặt 4 số dễ nhớ. Bắt buộc để xem tài khoản sau khi admin duyệt.</p>
-                ) : form.lookupPin.length === 4 ? (
-                  <p className="text-xs text-green-600 mt-1.5">✅ Ghi nhớ PIN này để tra cứu tài khoản.</p>
-                ) : (
-                  <p className="text-xs text-red-500 mt-1.5">Nhập đủ 4 số.</p>
-                )}
-              </div>
             </div>
 
             <button
@@ -249,7 +272,7 @@ export default function ShopPage() {
               disabled={submitting}
               className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-base hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 transition-colors"
             >
-              {submitting ? "Đang xử lý..." : `Tiếp tục → Thanh toán ${formatCurrency(selected.monthlyFee)}`}
+              {submitting ? "Đang xử lý..." : `Tiếp tục → Thanh toán ${formatCurrency(selected.monthlyFee * form.duration)}`}
             </button>
             <p className="text-xs text-gray-400 text-center">
               Đơn hàng có hiệu lực 2 giờ. Thanh toán để xác nhận đăng ký.

@@ -25,6 +25,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     id: order.id,
     status: order.status,
     amount: order.amount,
+    duration: order.duration,
     customerName: order.customerName,
     customerConfirmed: order.customerConfirmed,
     serviceName: order.account.service.name,

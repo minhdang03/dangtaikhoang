@@ -9,6 +9,7 @@ interface OrderDetail {
   id: string;
   status: string;
   amount: number;
+  duration: number;
   customerName: string;
   customerConfirmed?: boolean;
   serviceName: string;
@@ -173,7 +174,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
           </div>
           <div className="ml-auto text-right">
             <p className="text-lg font-bold text-blue-600">{formatCurrency(order.amount)}</p>
-            <p className="text-xs text-gray-400">1 tháng</p>
+            <p className="text-xs text-gray-400">{order.duration || 1} tháng</p>
           </div>
         </div>
         <div className="flex items-center justify-between text-xs text-gray-400 border-t border-gray-50 pt-2">

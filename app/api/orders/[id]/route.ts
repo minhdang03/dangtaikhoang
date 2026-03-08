@@ -42,6 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       accountId: order.accountId,
       slotLabel: "Slot",
       startDate: new Date().toISOString(),
+      duration: order.duration || 1,
       status: "active",
     });
 

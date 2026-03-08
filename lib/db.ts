@@ -7,7 +7,7 @@ const toAccount = (a: any): Account => ({ ...a, createdAt: a.createdAt.toISOStri
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toUser = (u: any): User => ({ ...u, createdAt: u.createdAt.toISOString() });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toSub = (s: any): Subscription => ({ ...s, createdAt: s.createdAt.toISOString() });
+const toSub = (s: any): Subscription => ({ ...s, duration: s.duration || 1, createdAt: s.createdAt.toISOString() });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toPayment = (p: any): Payment => ({
   ...p,
@@ -210,6 +210,7 @@ export const settingsDB = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toOrder = (o: any): Order => ({
   ...o,
+  duration: o.duration || 1,
   createdAt: o.createdAt.toISOString(),
   expiresAt: o.expiresAt.toISOString(),
 });
