@@ -13,7 +13,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         // Lazy import to avoid Edge Runtime bundling
         const { settingsDB } = await import("./db");
-        const settings = settingsDB.get();
+        const settings = await settingsDB.get();
         if (credentials?.password === settings.adminPassword) {
           return { id: "admin", name: "Admin", email: "admin@local" };
         }
