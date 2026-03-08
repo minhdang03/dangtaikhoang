@@ -114,24 +114,24 @@ export default function ShopPage() {
             <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
               {slots[0].serviceIcon} {slots[0].serviceName}
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {slots.map(slot => (
                 <div
                   key={slot.id}
-                  className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center gap-3"
+                  className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4"
                 >
-                  <div className="text-3xl">{slot.serviceIcon}</div>
+                  <div className="text-3xl shrink-0">{slot.serviceIcon}</div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900">{slot.serviceName}</p>
-                    <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                    <p className="font-semibold text-gray-900 truncate">{slot.serviceName}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-sm font-bold text-blue-600 whitespace-nowrap">{formatCurrency(slot.monthlyFee)}/tháng</span>
-                      <span className="text-xs text-gray-300 hidden sm:inline">·</span>
+                      <span className="text-gray-300 text-xs">·</span>
                       <span className="text-xs text-green-600 font-medium whitespace-nowrap">Còn {slot.freeSlots} slot</span>
                     </div>
                   </div>
                   <button
                     onClick={() => { setSelected(slot); setForm({ customerName: "", customerPhone: "", customerFb: "", lookupPin: "" }); setExistingOrder(null); }}
-                    className="shrink-0 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors"
+                    className="shrink-0 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors"
                   >
                     Đặt slot
                   </button>

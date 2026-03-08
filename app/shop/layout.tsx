@@ -18,7 +18,7 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
   return (
     <div className="min-h-screen bg-gray-50">
       <ShopHeader title={settings.shopTitle || "Dịch vụ chia sẻ"} isAdmin={isAdmin} />
-      <main className="max-w-3xl mx-auto px-4 py-6 sm:px-6">
+      <main className="max-w-5xl mx-auto px-4 py-6 sm:px-6">
         {children}
       </main>
       <Toast />

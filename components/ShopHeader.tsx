@@ -9,7 +9,7 @@ export function ShopHeader({ title, isAdmin }: { title: string; isAdmin?: boolea
 
   return (
     <header className="bg-white border-b border-gray-100 px-4 py-3 sticky top-0 z-40">
-      <div className="max-w-3xl mx-auto flex items-center justify-between gap-2">
+      <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
         <Link href="/shop" className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors truncate">
           {title}
         </Link>
