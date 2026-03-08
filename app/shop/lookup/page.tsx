@@ -221,7 +221,7 @@ export default function LookupPage() {
                   {o.customerConfirmed && (
                     <div className="mt-3 pt-3 border-t border-gray-50 text-xs text-gray-500 flex items-start gap-1.5">
                       <span>ℹ️</span>
-                      <span>Đã nhận được xác nhận chuyển khoản. Admin sẽ duyệt trong vài phút.</span>
+                      <span>Bạn đã báo chuyển khoản. Đang chờ admin kiểm tra và xác nhận.</span>
                     </div>
                   )}
                 </div>

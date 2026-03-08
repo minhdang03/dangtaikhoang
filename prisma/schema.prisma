@@ -80,6 +80,7 @@ model Settings {
   reminderDays  Int    @default(7)
   adminPassword String @default("admin123")
   shopTitle     String @default("Dịch vụ chia sẻ")
+  transferNote  String @default("{sdt}") // template: {sdt} = customer phone
 }
 
 model Order {

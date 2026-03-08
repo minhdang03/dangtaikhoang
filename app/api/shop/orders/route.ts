@@ -49,15 +49,16 @@ export async function POST(req: NextRequest) {
 
   // Generate QR URL
   const settings = await settingsDB.get();
+  // Build transfer note from template: {sdt} = customerPhone
+  const transferNote = (settings.transferNote || "{sdt}").replace("{sdt}", customerPhone.trim());
   let qrUrl = null;
   if (settings.accountNo && settings.bankBin) {
-    const desc = `DK ${account.service.name} ${customerPhone.trim().slice(-4)}`;
     qrUrl = generateVietQRUrl({
       bankBin: settings.bankBin,
       accountNo: settings.accountNo,
       accountName: settings.accountName,
       amount: account.monthlyFee,
-      description: desc,
+      description: transferNote,
     });
   }
 
@@ -67,6 +68,7 @@ export async function POST(req: NextRequest) {
     serviceName: account.service.name,
     serviceIcon: account.service.icon,
     qrUrl,
+    transferNote,
     bankInfo: {
       bankId: settings.bankId,
       accountNo: settings.accountNo,

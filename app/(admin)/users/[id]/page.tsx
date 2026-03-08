@@ -67,7 +67,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
 
   async function handlePinSave() {
     const p = pinInput.trim();
-    if (p && (p.length !== 4 || !/^\d{4}$/.test(p))) return;
+    if (p.length !== 4 || !/^\d{4}$/.test(p)) return; // must be exactly 4 digits
     setPinLoading(true);
     await fetch(`/api/users/${id}`, {
       method: "PUT",
@@ -156,7 +156,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
         <div className="flex gap-2 items-end">
           <div className="flex-1">
             <label className="block text-xs text-gray-500 mb-1">
-              {user.lookupPin ? "Đặt PIN mới (để xóa PIN, để trống)" : "Đặt PIN mới (4 số)"}
+              {user.lookupPin ? "Đặt PIN mới cho khách (4 số)" : "Đặt PIN mới (4 số) *bắt buộc"}
             </label>
             <input
               type="text"
@@ -171,7 +171,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           <Button
             onClick={handlePinSave}
             loading={pinLoading}
-            disabled={pinInput.length > 0 && pinInput.length < 4}
+            disabled={pinInput.length !== 4}
             size="sm"
           >
             {pinSaved ? "✅ Đã lưu" : user.lookupPin ? "Cập nhật" : "Đặt PIN"}

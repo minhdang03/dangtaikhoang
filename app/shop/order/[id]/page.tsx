@@ -16,6 +16,7 @@ interface OrderDetail {
   createdAt: string;
   expiresAt: string;
   qrUrl?: string;
+  transferNote?: string;
   bankInfo?: { bankId: string; accountNo: string; accountName: string };
 }
 
@@ -215,13 +216,15 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                     <CopyButton text={String(order.amount)} label="Copy" />
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Nội dung CK</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-gray-700">DK {order.id.slice(0, 8).toUpperCase()}</span>
-                    <CopyButton text={`DK ${order.id.slice(0, 8).toUpperCase()}`} label="Copy" />
+                {order.transferNote && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500">Nội dung CK</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-gray-700">{order.transferNote}</span>
+                      <CopyButton text={order.transferNote} label="Copy" />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* QR Code inline */}
@@ -251,7 +254,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
           <div className="text-center py-3">
             <div className="text-3xl mb-2">✅</div>
             <p className="font-semibold text-gray-900">Đã báo chuyển khoản</p>
-            <p className="text-sm text-gray-500 mt-1">Admin sẽ xác nhận trong vài phút.</p>
+            <p className="text-sm text-gray-500 mt-1">Đang chờ admin kiểm tra và xác nhận.</p>
             <p className="text-xs text-gray-400 mt-2">Sau khi xác nhận, vào <Link href="/shop/lookup" className="text-blue-600 underline">Tra cứu</Link> để xem tài khoản.</p>
           </div>
         ) : (

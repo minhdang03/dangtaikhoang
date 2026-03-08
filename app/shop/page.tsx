@@ -70,6 +70,10 @@ export default function ShopPage() {
       toast("Vui lòng điền đầy đủ tên và SĐT", "error");
       return;
     }
+    if (form.lookupPin.length !== 4) {
+      toast("Vui lòng đặt mã PIN 4 số để tra cứu tài khoản sau", "error");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/shop/orders", {
@@ -218,7 +222,7 @@ export default function ShopPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mã PIN tra cứu <span className="text-gray-400 font-normal">(4 số, để xem tài khoản sau)</span>
+                  Mã PIN tra cứu <span className="text-red-400 font-normal">*</span> <span className="text-gray-400 font-normal">(4 số, để xem tài khoản sau)</span>
                 </label>
                 <input
                   type="text"
@@ -231,13 +235,11 @@ export default function ShopPage() {
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
                 />
                 {form.lookupPin.length === 0 ? (
-                  <p className="text-xs text-amber-600 mt-1.5">
-                    ⚠️ Nên đặt PIN để tra cứu tài khoản sau. Nếu bỏ trống, bạn sẽ cần liên hệ admin để lấy thông tin.
-                  </p>
+                  <p className="text-xs text-gray-400 mt-1.5">💡 Tự đặt 4 số dễ nhớ. Bắt buộc để xem tài khoản sau khi admin duyệt.</p>
                 ) : form.lookupPin.length === 4 ? (
-                  <p className="text-xs text-green-600 mt-1.5">✅ PIN đã đặt. Ghi nhớ để dùng khi tra cứu.</p>
+                  <p className="text-xs text-green-600 mt-1.5">✅ Ghi nhớ PIN này để tra cứu tài khoản.</p>
                 ) : (
-                  <p className="text-xs text-gray-400 mt-1.5">💡 Nhập đủ 4 số.</p>
+                  <p className="text-xs text-red-500 mt-1.5">Nhập đủ 4 số.</p>
                 )}
               </div>
             </div>

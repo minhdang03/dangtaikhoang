@@ -17,6 +17,7 @@ export default function SettingsPage() {
     adminPassword: "",
     newPassword: "",
     shopTitle: "Dịch vụ chia sẻ",
+    transferNote: "{sdt}",
   });
 
   useEffect(() => {
@@ -29,6 +30,7 @@ export default function SettingsPage() {
         accountName: data.accountName || "",
         reminderDays: String(data.reminderDays || 7),
         shopTitle: data.shopTitle || "Dịch vụ chia sẻ",
+        transferNote: data.transferNote || "{sdt}",
       }));
     });
   }, []);
@@ -51,6 +53,7 @@ export default function SettingsPage() {
       accountName: form.accountName,
       reminderDays: Number(form.reminderDays),
       shopTitle: form.shopTitle,
+      transferNote: form.transferNote,
     };
     if (form.newPassword) {
       payload.adminPassword = form.newPassword;
@@ -80,6 +83,16 @@ export default function SettingsPage() {
             value={form.shopTitle}
             onChange={set("shopTitle")}
           />
+          <Input
+            label="Nội dung chuyển khoản"
+            placeholder="VD: {sdt} hoặc CK {sdt}"
+            value={form.transferNote}
+            onChange={set("transferNote")}
+          />
+          <div className="bg-gray-50 rounded-xl p-3 text-xs text-gray-500 flex flex-col gap-1">
+            <p>Biến có thể dùng: <span className="font-mono bg-white border border-gray-200 px-1 rounded">{"{sdt}"}</span> = số điện thoại khách</p>
+            <p className="text-gray-400">Ví dụ: <span className="font-mono">{`"{sdt}"`}</span> → <span className="font-mono">0912345678</span></p>
+          </div>
         </section>
 
         {/* Bank settings */}

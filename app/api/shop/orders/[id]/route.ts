@@ -19,6 +19,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 
   // Include bank info for payment page
   const settings = await settingsDB.get();
+  const transferNote = (settings.transferNote || "{sdt}").replace("{sdt}", order.customerPhone);
 
   return NextResponse.json({
     id: order.id,
@@ -30,6 +31,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     serviceIcon: order.account.service.icon,
     createdAt: order.createdAt.toISOString(),
     expiresAt: order.expiresAt.toISOString(),
+    transferNote,
     bankInfo: {
       bankId: settings.bankId,
       accountNo: settings.accountNo,

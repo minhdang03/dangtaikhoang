@@ -60,6 +60,7 @@ export interface Settings {
   reminderDays: number; // days before renewal to remind
   adminPassword: string;
   shopTitle: string;    // Tên shop hiển thị trên header
+  transferNote: string; // Template nội dung CK, {sdt} = SĐT khách
 }
 
 export interface Order {
