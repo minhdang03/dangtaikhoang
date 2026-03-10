@@ -40,8 +40,6 @@ const DEFAULT_SETTINGS: Omit<Settings, never> = {
 // --- Services ---
 export const servicesDB = {
   getAll: async (): Promise<Service[]> => {
-    const services = await prisma.service.findMany({ orderBy: { name: "asc" } });
-    if (services.length > 0) return services as Service[];
     await prisma.service.createMany({ data: DEFAULT_SERVICES, skipDuplicates: true });
     return prisma.service.findMany({ orderBy: { name: "asc" } }) as Promise<Service[]>;
   },
