@@ -1,4 +1,4 @@
-export type ServiceType = "chatgpt" | "netflix" | "google_drive" | "spotify" | "youtube" | "other";
+export type ServiceType = "chatgpt" | "netflix" | "google_drive" | "spotify" | "youtube" | "capcut" | "other";
 
 export interface Service {
   id: string;
@@ -15,6 +15,7 @@ export interface Account {
   password: string;     // plain text (personal use only)
   totalSlots: number;
   monthlyFee: number;   // VND per slot/month
+  yearlyFee: number;    // VND per slot/year (0 = no yearly option)
   renewalDate: string;  // ISO date
   notes: string;
   joinLink: string;

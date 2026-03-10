@@ -22,6 +22,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
     password: "",
     totalSlots: "5",
     monthlyFee: "50000",
+    yearlyFee: "0",
     renewalDate: "",
     notes: "",
     joinLink: "",
@@ -41,6 +42,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
         password: data.password,
         totalSlots: String(data.totalSlots),
         monthlyFee: String(data.monthlyFee),
+        yearlyFee: String(data.yearlyFee || 0),
         renewalDate: data.renewalDate?.split("T")[0] || "",
         notes: data.notes || "",
         joinLink: data.joinLink || "",
@@ -86,6 +88,20 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
             <Input label="Số slots" type="number" min="1" value={form.totalSlots} onChange={set("totalSlots")} required />
             <Input label="Giá/slot/tháng (₫)" type="number" min="0" step="1000" value={form.monthlyFee} onChange={set("monthlyFee")} required />
           </div>
+          <Input
+            label="Giá/slot/năm (₫) — tùy chọn"
+            type="number"
+            min="0"
+            step="1000"
+            placeholder="0 = không bán theo năm"
+            value={form.yearlyFee}
+            onChange={set("yearlyFee")}
+          />
+          {Number(form.yearlyFee) > 0 && Number(form.monthlyFee) > 0 && (
+            <p className="text-xs text-green-600 -mt-2">
+              💡 Tiết kiệm {Math.round((1 - Number(form.yearlyFee) / (Number(form.monthlyFee) * 12)) * 100)}% so với mua theo tháng
+            </p>
+          )}
           <Input label="Ngày gia hạn" type="date" value={form.renewalDate} onChange={set("renewalDate")} required />
           <TextArea label="Ghi chú" value={form.notes} onChange={set("notes")} />
         </div>

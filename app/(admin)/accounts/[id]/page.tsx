@@ -24,6 +24,7 @@ interface AccountDetail {
   password: string;
   totalSlots: number;
   monthlyFee: number;
+  yearlyFee: number;
   renewalDate: string;
   notes: string;
   service?: { icon: string; name: string };
@@ -122,7 +123,12 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
         </div>
         <div className="flex justify-between">
           <span className="text-sm text-gray-500">Giá/slot</span>
-          <span className="text-sm font-medium text-gray-900">{formatCurrency(account.monthlyFee)}/tháng</span>
+          <div className="text-right">
+            <span className="text-sm font-medium text-gray-900">{formatCurrency(account.monthlyFee)}/tháng</span>
+            {account.yearlyFee > 0 && (
+              <span className="text-xs text-green-600 ml-2">{formatCurrency(account.yearlyFee)}/năm</span>
+            )}
+          </div>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-500">Gia hạn</span>

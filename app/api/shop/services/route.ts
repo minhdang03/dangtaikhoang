@@ -24,6 +24,7 @@ export async function GET() {
       serviceName: a.service.name,
       serviceIcon: a.service.icon,
       monthlyFee: a.monthlyFee,
+      yearlyFee: a.yearlyFee,
       totalSlots: a.totalSlots,
       usedSlots: a._count.subscriptions,
       freeSlots: a.totalSlots - a._count.subscriptions,

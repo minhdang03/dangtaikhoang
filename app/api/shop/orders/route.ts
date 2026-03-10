@@ -40,7 +40,10 @@ export async function POST(req: NextRequest) {
   }
 
   const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
-  let totalAmount = account.monthlyFee * durationMonths;
+  // Use yearlyFee when buying 12 months and yearlyFee is set
+  let totalAmount = (durationMonths === 12 && account.yearlyFee > 0)
+    ? account.yearlyFee
+    : account.monthlyFee * durationMonths;
 
   // Apply promo code discount
   let validPromoId: string | null = null;

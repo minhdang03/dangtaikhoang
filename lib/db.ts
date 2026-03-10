@@ -3,7 +3,7 @@ import type { Service, Account, User, Subscription, Payment, Settings, Order, Pr
 
 // Prisma DateTime → ISO string converters
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toAccount = (a: any): Account => ({ ...a, createdAt: a.createdAt.toISOString() });
+const toAccount = (a: any): Account => ({ ...a, yearlyFee: a.yearlyFee || 0, createdAt: a.createdAt.toISOString() });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toUser = (u: any): User => ({ ...u, createdAt: u.createdAt.toISOString() });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,6 +21,7 @@ const DEFAULT_SERVICES: Omit<Service, never>[] = [
   { id: "google_drive", name: "Google Drive", type: "google_drive", icon: "💾" },
   { id: "spotify", name: "Spotify", type: "spotify", icon: "🎵" },
   { id: "youtube", name: "YouTube Premium", type: "youtube", icon: "▶️" },
+  { id: "capcut", name: "CapCut Pro", type: "capcut", icon: "✂️" },
 ];
 
 const DEFAULT_SETTINGS: Omit<Settings, never> = {

@@ -26,6 +26,7 @@ export default function NewAccountPage() {
     password: "",
     totalSlots: "5",
     monthlyFee: "50000",
+    yearlyFee: "0",
     renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
     notes: "",
     joinLink: "",
@@ -135,6 +136,20 @@ export default function NewAccountPage() {
               required
             />
           </div>
+          <Input
+            label="Giá/slot/năm (₫) — tùy chọn"
+            type="number"
+            min="0"
+            step="1000"
+            placeholder="0 = không bán theo năm"
+            value={form.yearlyFee}
+            onChange={set("yearlyFee")}
+          />
+          {Number(form.yearlyFee) > 0 && Number(form.monthlyFee) > 0 && (
+            <p className="text-xs text-green-600 -mt-2">
+              💡 Tiết kiệm {Math.round((1 - Number(form.yearlyFee) / (Number(form.monthlyFee) * 12)) * 100)}% so với mua theo tháng
+            </p>
+          )}
 
           <Input
             label="Ngày gia hạn"

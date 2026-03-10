@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Account" ADD COLUMN "yearlyFee" DOUBLE PRECISION NOT NULL DEFAULT 0;

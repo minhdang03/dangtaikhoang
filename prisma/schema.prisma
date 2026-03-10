@@ -24,6 +24,7 @@ model Account {
   password      String
   totalSlots    Int
   monthlyFee    Float
+  yearlyFee     Float          @default(0)
   renewalDate   String
   notes         String         @default("")
   joinLink      String         @default("")

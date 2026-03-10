@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
     password: body.password,
     totalSlots: Number(body.totalSlots),
     monthlyFee: Number(body.monthlyFee),
+    yearlyFee: Number(body.yearlyFee) || 0,
     renewalDate: body.renewalDate,
     notes: body.notes || "",
     joinLink: body.joinLink || "",

@@ -9,6 +9,7 @@ interface Account {
   id: string;
   label: string;
   monthlyFee: number;
+  yearlyFee: number;
   totalSlots: number;
   renewalDate: string;
   serviceId: string;
@@ -85,6 +86,12 @@ export default function AccountsPage() {
                       </span>
                       <span className="text-xs text-gray-300">·</span>
                       <span className="text-xs text-gray-400">{formatCurrency(acc.monthlyFee)}/tháng</span>
+                      {acc.yearlyFee > 0 && (
+                        <>
+                          <span className="text-xs text-gray-300">·</span>
+                          <span className="text-xs text-green-600">{formatCurrency(acc.yearlyFee)}/năm</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="text-right flex flex-col items-end gap-1">

@@ -10,6 +10,7 @@ interface ServiceSlot {
   serviceName: string;
   serviceIcon: string;
   monthlyFee: number;
+  yearlyFee: number;
   totalSlots: number;
   freeSlots: number;
   requireEmail: boolean;
@@ -99,7 +100,10 @@ export default function ShopPage() {
 
   function calcTotal(): number {
     if (!selected) return 0;
-    let total = selected.monthlyFee * form.duration;
+    // Use yearlyFee when duration=12 and yearlyFee is set
+    let total = (form.duration === 12 && selected.yearlyFee > 0)
+      ? selected.yearlyFee
+      : selected.monthlyFee * form.duration;
     if (promoApplied) {
       if (promoApplied.discountType === "percent") {
         total = total * (1 - promoApplied.discountValue / 100);
@@ -304,8 +308,17 @@ export default function ShopPage() {
                   <option value={1}>1 tháng — {formatCurrency(selected.monthlyFee * 1)}</option>
                   <option value={3}>3 tháng — {formatCurrency(selected.monthlyFee * 3)}</option>
                   <option value={6}>6 tháng — {formatCurrency(selected.monthlyFee * 6)}</option>
-                  <option value={12}>12 tháng — {formatCurrency(selected.monthlyFee * 12)}</option>
+                  <option value={12}>
+                    12 tháng — {selected.yearlyFee > 0
+                      ? `${formatCurrency(selected.yearlyFee)} (tiết kiệm ${Math.round((1 - selected.yearlyFee / (selected.monthlyFee * 12)) * 100)}%)`
+                      : formatCurrency(selected.monthlyFee * 12)}
+                  </option>
                 </select>
+                {form.duration === 12 && selected.yearlyFee > 0 && (
+                  <p className="text-xs text-green-600 mt-1">
+                    🎉 Giá gốc <span className="line-through text-gray-400">{formatCurrency(selected.monthlyFee * 12)}</span> → <strong>{formatCurrency(selected.yearlyFee)}</strong>
+                  </p>
+                )}
               </div>
 
               {/* Email field — shown when account requires email (Canva etc.) */}
@@ -378,7 +391,9 @@ export default function ShopPage() {
             {/* Total with discount */}
             {promoApplied && (
               <div className="flex items-center justify-between bg-green-50 rounded-xl px-4 py-2.5 text-sm">
-                <span className="text-gray-600">Tổng gốc: <span className="line-through">{formatCurrency(selected.monthlyFee * form.duration)}</span></span>
+                <span className="text-gray-600">Tổng gốc: <span className="line-through">{formatCurrency(
+                  form.duration === 12 && selected.yearlyFee > 0 ? selected.yearlyFee : selected.monthlyFee * form.duration
+                )}</span></span>
                 <span className="font-bold text-green-700">→ {formatCurrency(calcTotal())}</span>
               </div>
             )}
