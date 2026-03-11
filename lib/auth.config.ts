@@ -15,7 +15,9 @@ export const authConfig: NextAuthConfig = {
       const isShop = nextUrl.pathname.startsWith("/shop");
       const isApiShop = nextUrl.pathname.startsWith("/api/shop");
 
-      if (isApiAuth || isPublicPay || isShop || isApiShop) return true;
+      const isTelegramWebhook = nextUrl.pathname.startsWith("/api/telegram");
+
+      if (isApiAuth || isPublicPay || isShop || isApiShop || isTelegramWebhook) return true;
       if (!isLoggedIn && !isLoginPage) return Response.redirect(new URL("/shop", nextUrl)); // khách vào / → shop
       if (!isLoggedIn && isLoginPage) return true; // cho vào trang login
       if (isLoggedIn && isLoginPage) return Response.redirect(new URL("/", nextUrl));

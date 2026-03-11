@@ -18,7 +18,7 @@ interface UserDetail {
     id: string;
     slotLabel: string;
     status: string;
-    account?: { id: string; label: string; monthlyFee: number; service?: { icon: string; name: string } };
+    account?: { id: string; label: string; price1m: number; service?: { icon: string; name: string } };
   }>;
   payments: Array<{
     id: string;
@@ -199,7 +199,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     <p className="font-medium text-gray-900 text-sm">{s.account?.label}</p>
                     <p className="text-xs text-gray-400">{s.slotLabel}</p>
                   </div>
-                  <span className="text-sm text-gray-500">{formatCurrency(s.account?.monthlyFee || 0)}/tháng</span>
+                  <span className="text-sm text-gray-500">{formatCurrency(s.account?.price1m || 0)}/tháng</span>
                 </div>
               </Link>
             ))}

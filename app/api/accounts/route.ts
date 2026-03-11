@@ -26,12 +26,16 @@ export async function POST(req: NextRequest) {
     email: body.email,
     password: body.password,
     totalSlots: Number(body.totalSlots),
-    monthlyFee: Number(body.monthlyFee),
-    yearlyFee: Number(body.yearlyFee) || 0,
+    price1m: Number(body.price1m) || 0,
+    price3m: Number(body.price3m) || 0,
+    price6m: Number(body.price6m) || 0,
+    price12m: Number(body.price12m) || 0,
     renewalDate: body.renewalDate,
+    slug: body.slug?.trim() || undefined,
     notes: body.notes || "",
     joinLink: body.joinLink || "",
     requireEmail: body.requireEmail || false,
+    shareType: body.shareType || "account",
   });
   return NextResponse.json(account, { status: 201 });
 }

@@ -2,6 +2,7 @@ import { Toast } from "@/components/ui/Toast";
 import { settingsDB } from "@/lib/db";
 import { ShopHeader } from "@/components/ShopHeader";
 import { auth } from "@/lib/auth";
+import { VersionBadge } from "@/components/VersionBadge";
 
 export async function generateMetadata() {
   const settings = await settingsDB.get();
@@ -30,6 +31,7 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
         {children}
       </main>
       <Toast />
+      <VersionBadge />
     </div>
   );
 }

@@ -20,6 +20,10 @@ export default function SettingsPage() {
     shopDescription: "Đăng ký dịch vụ với giá tốt nhất",
     transferNote: "{sdt}",
     ogImage: "",
+    telegramBotToken: "",
+    telegramChatId: "",
+    contactFacebook: "",
+    contactTelegram: "",
   });
 
   useEffect(() => {
@@ -35,6 +39,10 @@ export default function SettingsPage() {
         shopDescription: data.shopDescription || "Đăng ký dịch vụ với giá tốt nhất",
         transferNote: data.transferNote || "{sdt}",
         ogImage: data.ogImage || "",
+        telegramBotToken: data.telegramBotToken || "",
+        telegramChatId: data.telegramChatId || "",
+        contactFacebook: data.contactFacebook || "",
+        contactTelegram: data.contactTelegram || "",
       }));
     });
   }, []);
@@ -60,6 +68,10 @@ export default function SettingsPage() {
       shopDescription: form.shopDescription,
       transferNote: form.transferNote,
       ogImage: form.ogImage,
+      telegramBotToken: form.telegramBotToken,
+      telegramChatId: form.telegramChatId,
+      contactFacebook: form.contactFacebook,
+      contactTelegram: form.contactTelegram,
     };
     if (form.newPassword) {
       payload.adminPassword = form.newPassword;
@@ -154,6 +166,60 @@ export default function SettingsPage() {
             max="30"
             value={form.reminderDays}
             onChange={set("reminderDays")}
+          />
+        </section>
+
+        {/* Telegram */}
+        <section className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col gap-4">
+          <h2 className="font-semibold text-gray-900">📱 Thông báo Telegram</h2>
+          <Input
+            label="Bot Token"
+            placeholder="123456:ABC-DEF..."
+            value={form.telegramBotToken}
+            onChange={set("telegramBotToken")}
+          />
+          <Input
+            label="Chat ID"
+            placeholder="-1001234567890"
+            value={form.telegramChatId}
+            onChange={set("telegramChatId")}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={async () => {
+              const res = await fetch("/api/settings/test-telegram", { method: "POST" });
+              if (res.ok) alert("Đã gửi tin nhắn thử!");
+              else {
+                const data = await res.json();
+                alert(data.error || "Lỗi gửi tin nhắn");
+              }
+            }}
+          >
+            🧪 Gửi tin nhắn thử
+          </Button>
+          <div className="bg-gray-50 rounded-xl p-3 text-xs text-gray-500 flex flex-col gap-1">
+            <p>Khi có đơn hàng mới, bot sẽ gửi thông báo kèm nút Duyệt/Từ chối.</p>
+            <p className="text-gray-400">Webhook URL: <code className="bg-white border border-gray-200 px-1 rounded">https://dangtaikhoang.minhdanglu.com/api/telegram/webhook</code></p>
+          </div>
+        </section>
+
+        {/* Contact links */}
+        <section className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col gap-4">
+          <h2 className="font-semibold text-gray-900">📞 Liên hệ khi hết slot</h2>
+          <p className="text-xs text-gray-400 -mt-2">Hiện nút liên hệ trên shop khi dịch vụ hết slot. Để trống nếu không muốn hiện.</p>
+          <Input
+            label="Facebook (URL trang / Messenger)"
+            placeholder="https://m.me/yourpage"
+            value={form.contactFacebook}
+            onChange={set("contactFacebook")}
+          />
+          <Input
+            label="Telegram (username hoặc link)"
+            placeholder="https://t.me/yourusername"
+            value={form.contactTelegram}
+            onChange={set("contactTelegram")}
           />
         </section>
 

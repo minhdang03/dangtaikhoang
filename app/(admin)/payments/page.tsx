@@ -85,11 +85,10 @@ export default function PaymentsPage() {
           <button
             key={m}
             onClick={() => setMonth(m)}
-            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              month === m
+            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${month === m
                 ? "bg-blue-600 text-white"
                 : "bg-white text-gray-600 border border-gray-200"
-            }`}
+              }`}
           >
             {formatMonth(m)}
           </button>
@@ -151,7 +150,10 @@ function PaymentRow({ payment: p, onMarkPaid }: { payment: Payment; onMarkPaid?:
         </div>
         <div className="text-right shrink-0">
           <p className="font-semibold text-gray-900">{formatCurrency(p.amount)}</p>
-          {p.status === "paid" && <Badge variant="green">Đã TT</Badge>}
+          {p.status === "paid"
+            ? <Badge variant="green">✓ Đã TT</Badge>
+            : <Badge variant="yellow">⏳ Chờ TT</Badge>
+          }
         </div>
       </Link>
       {onMarkPaid && (

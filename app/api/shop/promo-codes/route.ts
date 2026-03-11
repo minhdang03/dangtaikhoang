@@ -25,6 +25,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Mã giảm giá đã hết lượt sử dụng" }, { status: 400 });
   }
 
+  // Check if promo applies to the specific account
+  const accountId = req.nextUrl.searchParams.get("accountId");
+  if (promo.applicableAccountIds.length > 0 && accountId) {
+    if (!promo.applicableAccountIds.includes(accountId)) {
+      return NextResponse.json({ error: "Mã giảm giá không áp dụng cho dịch vụ này" }, { status: 400 });
+    }
+  }
+
   return NextResponse.json({
     id: promo.id,
     code: promo.code,

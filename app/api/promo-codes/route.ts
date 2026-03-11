@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
     code: body.code,
     discountType: body.discountType || "percent",
     discountValue: Number(body.discountValue),
+    applicableAccountIds: body.applicableAccountIds || [],
     expiresAt: body.expiresAt || null,
     maxUses: Number(body.maxUses) || 0,
     active: body.active !== false,

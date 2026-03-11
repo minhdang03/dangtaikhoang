@@ -133,7 +133,11 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
       <div className="flex flex-col items-center gap-4 pt-8 text-center max-w-md mx-auto">
         <div className="text-6xl">🎉</div>
         <h2 className="text-xl font-bold text-gray-900">Đã xác nhận!</h2>
-        <p className="text-gray-500">Đăng ký {order.serviceName} của bạn đã được kích hoạt.</p>
+        <p className="text-gray-500">
+          {order.amount === 0
+            ? "Đơn hàng miễn phí đã được xử lý tự động."
+            : `Đăng ký ${order.serviceName} của bạn đã được kích hoạt.`}
+        </p>
         <Link
           href="/shop/lookup"
           className="mt-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold text-sm"
@@ -171,7 +175,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
           <span className="text-3xl">{order.serviceIcon}</span>
           <div>
             <p className="font-bold text-gray-900">{order.serviceName}</p>
-            <p className="text-sm text-gray-500">Xin chào, {order.customerName || order.customerPhone}</p>
+            <p className="text-sm text-gray-500">Xin chào, {order.customerName?.trim() || order.customerPhone}</p>
           </div>
           <div className="ml-auto text-right">
             <p className="text-lg font-bold text-blue-600">{formatCurrency(order.amount)}</p>

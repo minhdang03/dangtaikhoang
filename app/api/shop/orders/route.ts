@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateVietQRUrl } from "@/lib/vietqr";
 import { settingsDB, promoCodesDB } from "@/lib/db";
+import { confirmOrder } from "@/lib/order-helpers";
+import { sendTelegramMessage, buildOrderNotification } from "@/lib/telegram";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -35,15 +37,42 @@ export async function POST(req: NextRequest) {
   if (!account) {
     return NextResponse.json({ error: "Không tìm thấy dịch vụ" }, { status: 404 });
   }
-  if (account._count.subscriptions >= account.totalSlots) {
+
+  // For solo accounts: if this one is taken, find another available solo account of same service
+  let finalAccount = account;
+  const shareType = (account as { shareType?: string }).shareType || "account";
+  if (shareType === "solo" && account._count.subscriptions >= account.totalSlots) {
+    const alt = await prisma.account.findFirst({
+      where: {
+        serviceId: account.serviceId,
+        shareType: "solo",
+        subscriptions: { none: { status: "active" } },
+      },
+      include: {
+        service: true,
+        _count: { select: { subscriptions: { where: { status: "active" } } } },
+      },
+    });
+    if (!alt) return NextResponse.json({ error: "Hết tài khoản, vui lòng liên hệ admin" }, { status: 409 });
+    finalAccount = alt as typeof account;
+  } else if (shareType !== "solo" && account._count.subscriptions >= account.totalSlots) {
     return NextResponse.json({ error: "Hết slot, vui lòng chọn dịch vụ khác" }, { status: 409 });
   }
 
+  const resolvedAccountId = finalAccount.id;
+
   const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
-  // Use yearlyFee when buying 12 months and yearlyFee is set
-  let totalAmount = (durationMonths === 12 && account.yearlyFee > 0)
-    ? account.yearlyFee
-    : account.monthlyFee * durationMonths;
+  // Lookup price by duration — each duration has its own price (0 = not available)
+  const priceMap: Record<number, number> = {
+    1: finalAccount.price1m,
+    3: finalAccount.price3m,
+    6: finalAccount.price6m,
+    12: finalAccount.price12m,
+  };
+  let totalAmount = priceMap[durationMonths] || 0;
+  if (totalAmount <= 0) {
+    return NextResponse.json({ error: "Gói thời hạn này không khả dụng" }, { status: 400 });
+  }
 
   // Apply promo code discount
   let validPromoId: string | null = null;
@@ -52,7 +81,8 @@ export async function POST(req: NextRequest) {
     if (promo && promo.active) {
       const notExpired = !promo.expiresAt || new Date(promo.expiresAt) > new Date();
       const hasUses = promo.maxUses === 0 || promo.usedCount < promo.maxUses;
-      if (notExpired && hasUses) {
+      const appliesToAccount = promo.applicableAccountIds.length === 0 || promo.applicableAccountIds.includes(resolvedAccountId);
+      if (notExpired && hasUses && appliesToAccount) {
         if (promo.discountType === "percent") {
           totalAmount = Math.round(totalAmount * (1 - promo.discountValue / 100));
         } else {
@@ -66,7 +96,7 @@ export async function POST(req: NextRequest) {
 
   const order = await prisma.order.create({
     data: {
-      accountId,
+      accountId: resolvedAccountId,
       customerName: (customerName || "").trim(),
       customerPhone: customerPhone.trim(),
       customerFb: customerFb?.trim() || "",
@@ -75,14 +105,42 @@ export async function POST(req: NextRequest) {
       amount: totalAmount,
       duration: durationMonths,
       promoCodeId: validPromoId,
-      status: "pending",
+      status: totalAmount === 0 ? "confirmed" : "pending",
+      customerConfirmed: totalAmount === 0,
       expiresAt,
     },
   });
 
-  // Generate QR URL
+  // Đơn hàng miễn phí → tự động xác nhận
+  if (totalAmount === 0) {
+    await confirmOrder(order);
+    return NextResponse.json({
+      id: order.id,
+      amount: 0,
+      duration: order.duration,
+      serviceName: account.service.name,
+      serviceIcon: account.service.icon,
+      status: "confirmed",
+    }, { status: 201 });
+  }
+
+  // Send Telegram notification (non-blocking)
   const settings = await settingsDB.get();
-  // Build transfer note from template: {sdt} = customerPhone
+  if (settings.telegramBotToken && settings.telegramChatId) {
+    const notification = buildOrderNotification({
+      id: order.id,
+      customerPhone: customerPhone.trim(),
+      customerName: (customerName || "").trim(),
+      serviceName: account.service.name,
+      duration: durationMonths,
+      amount: totalAmount,
+      promoCode: validPromoId ? promoCodeId : undefined,
+    });
+    sendTelegramMessage(settings.telegramBotToken, settings.telegramChatId, notification.text, notification.replyMarkup)
+      .catch(console.error);
+  }
+
+  // Generate QR URL for paid orders
   const transferNote = (settings.transferNote || "{sdt}").replace("{sdt}", customerPhone.trim());
   let qrUrl = null;
   if (settings.accountNo && settings.bankBin) {

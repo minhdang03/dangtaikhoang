@@ -3,7 +3,7 @@ import type { Service, Account, User, Subscription, Payment, Settings, Order, Pr
 
 // Prisma DateTime → ISO string converters
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toAccount = (a: any): Account => ({ ...a, yearlyFee: a.yearlyFee || 0, createdAt: a.createdAt.toISOString() });
+const toAccount = (a: any): Account => ({ ...a, slug: a.slug || undefined, price1m: a.price1m || 0, price3m: a.price3m || 0, price6m: a.price6m || 0, price12m: a.price12m || 0, createdAt: a.createdAt.toISOString() });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toUser = (u: any): User => ({ ...u, createdAt: u.createdAt.toISOString() });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,6 +22,8 @@ const DEFAULT_SERVICES: Omit<Service, never>[] = [
   { id: "spotify", name: "Spotify", type: "spotify", icon: "🎵" },
   { id: "youtube", name: "YouTube Premium", type: "youtube", icon: "▶️" },
   { id: "capcut", name: "CapCut Pro", type: "capcut", icon: "✂️" },
+  { id: "canva", name: "Canva Pro", type: "canva", icon: "🎨" },
+  { id: "adobe", name: "Adobe Creative Cloud", type: "adobe", icon: "🅰️" },
 ];
 
 const DEFAULT_SETTINGS: Omit<Settings, never> = {
@@ -35,6 +37,10 @@ const DEFAULT_SETTINGS: Omit<Settings, never> = {
   shopDescription: "Đăng ký dịch vụ với giá tốt nhất",
   transferNote: "{sdt}",
   ogImage: "",
+  telegramBotToken: "",
+  telegramChatId: "",
+  contactFacebook: "",
+  contactTelegram: "",
 };
 
 // --- Services ---
@@ -66,6 +72,12 @@ export const accountsDB = {
   getById: async (id: string): Promise<Account | null> => {
     const row = await prisma.account.findUnique({ where: { id } });
     return row ? toAccount(row) : null;
+  },
+  getBySlugOrId: async (slugOrId: string): Promise<Account | null> => {
+    const bySlug = await prisma.account.findUnique({ where: { slug: slugOrId } });
+    if (bySlug) return toAccount(bySlug);
+    const byId = await prisma.account.findUnique({ where: { id: slugOrId } });
+    return byId ? toAccount(byId) : null;
   },
   create: async (data: Omit<Account, "id" | "createdAt">): Promise<Account> => {
     const row = await prisma.account.create({ data });

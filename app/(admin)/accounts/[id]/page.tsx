@@ -23,8 +23,10 @@ interface AccountDetail {
   email: string;
   password: string;
   totalSlots: number;
-  monthlyFee: number;
-  yearlyFee: number;
+  price1m: number;
+  price3m: number;
+  price6m: number;
+  price12m: number;
   renewalDate: string;
   notes: string;
   service?: { icon: string; name: string };
@@ -122,12 +124,12 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
         <div className="flex justify-between">
-          <span className="text-sm text-gray-500">Giá/slot</span>
-          <div className="text-right">
-            <span className="text-sm font-medium text-gray-900">{formatCurrency(account.monthlyFee)}/tháng</span>
-            {account.yearlyFee > 0 && (
-              <span className="text-xs text-green-600 ml-2">{formatCurrency(account.yearlyFee)}/năm</span>
-            )}
+          <span className="text-sm text-gray-500">Bảng giá</span>
+          <div className="text-right flex flex-wrap gap-x-2 gap-y-0.5 justify-end">
+            {account.price1m > 0 && <span className="text-xs text-gray-700">{formatCurrency(account.price1m)}/th</span>}
+            {account.price3m > 0 && <span className="text-xs text-gray-700">{formatCurrency(account.price3m)}/3th</span>}
+            {account.price6m > 0 && <span className="text-xs text-gray-700">{formatCurrency(account.price6m)}/6th</span>}
+            {account.price12m > 0 && <span className="text-xs text-green-600">{formatCurrency(account.price12m)}/năm</span>}
           </div>
         </div>
         <div className="flex justify-between items-center">

@@ -8,6 +8,7 @@ interface PromoCode {
   code: string;
   discountType: "percent" | "fixed";
   discountValue: number;
+  applicableAccountIds: string[];
   expiresAt: string | null;
   maxUses: number;
   usedCount: number;
@@ -15,8 +16,16 @@ interface PromoCode {
   createdAt: string;
 }
 
+interface AccountOption {
+  id: string;
+  label: string;
+  serviceIcon: string;
+  serviceName: string;
+}
+
 export default function PromoCodesPage() {
   const [codes, setCodes] = useState<PromoCode[]>([]);
+  const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -27,6 +36,7 @@ export default function PromoCodesPage() {
     discountValue: "10",
     expiresAt: "",
     maxUses: "0",
+    applicableAccountIds: [] as string[],
   });
 
   async function fetchCodes() {
@@ -35,14 +45,34 @@ export default function PromoCodesPage() {
     setLoading(false);
   }
 
-  useEffect(() => { fetchCodes(); }, []);
+  async function fetchAccounts() {
+    const res = await fetch("/api/accounts");
+    const data = await res.json();
+    setAccounts(data.map((a: { id: string; label: string; service?: { icon: string; name: string } }) => ({
+      id: a.id,
+      label: a.label,
+      serviceIcon: a.service?.icon || "",
+      serviceName: a.service?.name || "",
+    })));
+  }
+
+  useEffect(() => { fetchCodes(); fetchAccounts(); }, []);
 
   const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [key]: e.target.value }));
 
+  function toggleAccount(accountId: string) {
+    setForm(f => ({
+      ...f,
+      applicableAccountIds: f.applicableAccountIds.includes(accountId)
+        ? f.applicableAccountIds.filter(id => id !== accountId)
+        : [...f.applicableAccountIds, accountId],
+    }));
+  }
+
   function openNew() {
     setEditingId(null);
-    setForm({ code: "", discountType: "percent", discountValue: "10", expiresAt: "", maxUses: "0" });
+    setForm({ code: "", discountType: "percent", discountValue: "10", expiresAt: "", maxUses: "0", applicableAccountIds: [] });
     setShowForm(true);
   }
 
@@ -54,6 +84,7 @@ export default function PromoCodesPage() {
       discountValue: String(c.discountValue),
       expiresAt: c.expiresAt ? c.expiresAt.split("T")[0] : "",
       maxUses: String(c.maxUses),
+      applicableAccountIds: c.applicableAccountIds || [],
     });
     setShowForm(true);
   }
@@ -67,6 +98,7 @@ export default function PromoCodesPage() {
       discountValue: Number(form.discountValue),
       expiresAt: form.expiresAt || null,
       maxUses: Number(form.maxUses),
+      applicableAccountIds: form.applicableAccountIds,
     };
 
     if (editingId) {
@@ -102,6 +134,14 @@ export default function PromoCodesPage() {
     fetchCodes();
   }
 
+  function getAccountLabels(ids: string[]) {
+    if (!ids || ids.length === 0) return "Tất cả";
+    return ids.map(id => {
+      const acc = accounts.find(a => a.id === id);
+      return acc ? `${acc.serviceIcon} ${acc.label}` : id.slice(0, 8);
+    }).join(", ");
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -134,6 +174,11 @@ export default function PromoCodesPage() {
                     {c.maxUses > 0 ? ` · ${c.usedCount}/${c.maxUses} lượt` : ` · ${c.usedCount} lượt dùng`}
                     {c.expiresAt ? ` · HSD: ${new Date(c.expiresAt).toLocaleDateString("vi-VN")}` : ""}
                   </p>
+                  {c.applicableAccountIds && c.applicableAccountIds.length > 0 && (
+                    <p className="text-xs text-blue-500 mt-0.5">
+                      Áp dụng: {getAccountLabels(c.applicableAccountIds)}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-1">
                   <button
@@ -168,7 +213,7 @@ export default function PromoCodesPage() {
           onClick={() => setShowForm(false)}
         >
           <div
-            className="bg-white w-full sm:w-[440px] sm:rounded-2xl rounded-t-3xl p-6 flex flex-col gap-4"
+            className="bg-white w-full sm:w-[440px] sm:rounded-2xl rounded-t-3xl p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -214,6 +259,33 @@ export default function PromoCodesPage() {
                   value={form.maxUses}
                   onChange={set("maxUses")}
                 />
+              </div>
+
+              {/* Account selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Áp dụng cho tài khoản <span className="text-gray-400 font-normal">(để trống = tất cả)</span>
+                </label>
+                {accounts.length === 0 ? (
+                  <p className="text-sm text-gray-400">Chưa có tài khoản nào</p>
+                ) : (
+                  <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-xl p-2 flex flex-col gap-0.5">
+                    {accounts.map(acc => (
+                      <label
+                        key={acc.id}
+                        className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={form.applicableAccountIds.includes(acc.id)}
+                          onChange={() => toggleAccount(acc.id)}
+                          className="rounded border-gray-300"
+                        />
+                        <span>{acc.serviceIcon} {acc.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3">

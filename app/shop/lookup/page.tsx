@@ -15,6 +15,7 @@ interface PendingOrder {
 interface Account {
   serviceName: string;
   serviceIcon: string;
+  shareType: "account" | "invite" | "solo";
   email: string;
   password: string;
   slotLabel: string;
@@ -32,51 +33,75 @@ interface LookupResult {
   hasPin: boolean | null; // null=user not found, false=no pin set, true=pin set
 }
 
-// Individual show/hide password per account
 function AccountCard({ acc }: { acc: Account }) {
   const [show, setShow] = useState(false);
   const endDateStr = acc.endDate ? new Date(acc.endDate).toLocaleDateString("vi-VN") : "";
+  const isInvite = acc.shareType === "invite";
+  const isSolo = acc.shareType === "solo";
+
   return (
     <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
       <div className="flex items-center gap-3 mb-3">
         <span className="text-2xl">{acc.serviceIcon}</span>
         <div>
           <p className="font-semibold text-gray-900">{acc.serviceName}</p>
-          <p className="text-xs text-gray-400">{acc.slotLabel}</p>
+          {!isSolo && <p className="text-xs text-gray-400">{acc.slotLabel}</p>}
         </div>
         {endDateStr && (
           <span className="ml-auto text-xs text-gray-400">HSD: {endDateStr}</span>
         )}
       </div>
-      <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-2.5 text-sm">
-        <div className="flex justify-between items-center">
-          <span className="text-gray-500">Email</span>
-          <span className="font-mono text-gray-900 text-xs select-all">{acc.email}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-gray-500">Mật khẩu</span>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-gray-900 text-xs select-all">
-              {show ? acc.password : "•".repeat(Math.min(acc.password.length, 10))}
-            </span>
-            <button
-              onClick={() => setShow(s => !s)}
-              className="text-xs text-blue-600 font-medium shrink-0 underline"
-            >
-              {show ? "Ẩn" : "Hiện"}
-            </button>
+
+      {isInvite ? (
+        /* Invite-type: chỉ hiện join link */
+        acc.joinLink ? (
+          <a
+            href={acc.joinLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full block text-center py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
+          >
+            🔗 Tham gia {acc.serviceName} →
+          </a>
+        ) : (
+          <div className="bg-amber-50 rounded-xl p-3 text-sm text-amber-700 text-center">
+            ⏳ Admin đang xử lý lời mời. Vui lòng chờ hoặc liên hệ admin.
           </div>
-        </div>
-      </div>
-      {acc.joinLink && (
-        <a
-          href={acc.joinLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 w-full block text-center py-2.5 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 transition-colors"
-        >
-          Tham gia nhóm →
-        </a>
+        )
+      ) : (
+        /* Account-type: hiện email + mật khẩu */
+        <>
+          <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-2.5 text-sm">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">Email</span>
+              <span className="font-mono text-gray-900 text-xs select-all">{acc.email}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">Mật khẩu</span>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-gray-900 text-xs select-all">
+                  {show ? acc.password : "•".repeat(Math.min(acc.password.length, 10))}
+                </span>
+                <button
+                  onClick={() => setShow(s => !s)}
+                  className="text-xs text-blue-600 font-medium shrink-0 underline"
+                >
+                  {show ? "Ẩn" : "Hiện"}
+                </button>
+              </div>
+            </div>
+          </div>
+          {acc.joinLink && (
+            <a
+              href={acc.joinLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 w-full block text-center py-2.5 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 transition-colors"
+            >
+              Tham gia nhóm →
+            </a>
+          )}
+        </>
       )}
     </div>
   );

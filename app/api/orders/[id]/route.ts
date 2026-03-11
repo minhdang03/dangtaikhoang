@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { subscriptionsDB, paymentsDB } from "@/lib/db";
+import { confirmOrder } from "@/lib/order-helpers";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,58 +14,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   if (body.status === "confirmed") {
-    // Auto-create user (or find by phone), subscription, payment
-    let user = await prisma.user.findFirst({
-      where: { phone: order.customerPhone },
-    });
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          name: order.customerName,
-          phone: order.customerPhone,
-          fbLink: order.customerFb,
-          lookupPin: order.lookupPin,
-        },
-      });
-    } else if (order.lookupPin) {
-      // Update PIN if order has one (latest PIN wins)
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { lookupPin: order.lookupPin },
-      });
-    }
-
-    // Create subscription with calculated endDate
-    const startDate = new Date();
-    const durationMonths = order.duration || 1;
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + durationMonths * 30);
-
-    await subscriptionsDB.create({
-      userId: user.id,
-      accountId: order.accountId,
-      slotLabel: "Slot",
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      duration: durationMonths,
-      status: "active",
-    });
-
-    // Create payment (paid)
-    await paymentsDB.create({
-      subscriptionId: (await prisma.subscription.findFirst({
-        where: { userId: user.id, accountId: order.accountId, status: "active" },
-        orderBy: { createdAt: "desc" },
-      }))!.id,
-      userId: user.id,
-      accountId: order.accountId,
-      amount: order.amount,
-      month: new Date().toISOString().slice(0, 7),
-      status: "paid",
-      paidAt: new Date().toISOString(),
-      note: `Đơn hàng #${order.id.slice(0, 8)}`,
-    });
+    await confirmOrder(order);
+    return NextResponse.json({ ok: true });
   }
 
   await prisma.order.update({ where: { id }, data: { status: body.status } });
