@@ -20,11 +20,15 @@ model Account {
   serviceId     String
   service       Service        @relation(fields: [serviceId], references: [id])
   label         String
-  email         String
-  password      String
+  slug          String?        @unique
+  email         String         @default("")
+  password      String         @default("")
+  shareType     String         @default("account") // "account" | "invite"
   totalSlots    Int
-  monthlyFee    Float
-  yearlyFee     Float          @default(0)
+  price1m       Float          @default(0)
+  price3m       Float          @default(0)
+  price6m       Float          @default(0)
+  price12m      Float          @default(0)
   renewalDate   String
   notes         String         @default("")
   joinLink      String         @default("")
@@ -89,8 +93,10 @@ model Settings {
   shopDescription  String @default("Đăng ký dịch vụ với giá tốt nhất")
   transferNote     String @default("{sdt}") // template: {sdt} = customer phone
   ogImage          String @default("")
-  telegramBotToken String @default("")
-  telegramChatId   String @default("")
+  telegramBotToken  String @default("")
+  telegramChatId    String @default("")
+  contactFacebook   String @default("")
+  contactTelegram   String @default("")
 }
 
 model Order {

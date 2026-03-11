@@ -1,19 +1,42 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
 interface ServiceSlot {
   id: string;
+  slug?: string;
   serviceType: string;
   serviceName: string;
   serviceIcon: string;
-  monthlyFee: number;
-  yearlyFee: number;
+  price1m: number;
+  price3m: number;
+  price6m: number;
+  price12m: number;
   totalSlots: number;
   freeSlots: number;
+  isFull: boolean;
+  isSolo: boolean;
   requireEmail: boolean;
+}
+
+const DURATION_OPTIONS = [
+  { months: 1, label: "1 tháng", shortLabel: "/tháng" },
+  { months: 3, label: "3 tháng", shortLabel: "/3 tháng" },
+  { months: 6, label: "6 tháng", shortLabel: "/6 tháng" },
+  { months: 12, label: "12 tháng", shortLabel: "/năm" },
+] as const;
+
+function getAvailableDurations(slot: ServiceSlot) {
+  const priceMap: Record<number, number> = { 1: slot.price1m, 3: slot.price3m, 6: slot.price6m, 12: slot.price12m };
+  return DURATION_OPTIONS.filter(d => priceMap[d.months] > 0).map(d => ({ ...d, price: priceMap[d.months] }));
+}
+
+function getDisplayPrice(slot: ServiceSlot): { price: number; label: string } {
+  const available = getAvailableDurations(slot);
+  return available.length > 0 ? { price: available[0].price, label: available[0].shortLabel } : { price: 0, label: "" };
 }
 
 interface OrderForm {
@@ -26,6 +49,7 @@ interface OrderForm {
 }
 
 export default function ShopPage() {
+  const searchParams = useSearchParams();
   const [grouped, setGrouped] = useState<Record<string, ServiceSlot[]>>({});
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ServiceSlot | null>(null);
@@ -34,20 +58,50 @@ export default function ShopPage() {
   const [existingOrder, setExistingOrder] = useState<{ id: string; serviceName: string } | null>(null);
   const [checkingPhone, setCheckingPhone] = useState(false);
   const [shopDescription, setShopDescription] = useState("Đăng ký dịch vụ với giá tốt nhất");
+  const [contactFacebook, setContactFacebook] = useState("");
+  const [contactTelegram, setContactTelegram] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState<{ id: string; code: string; discountType: string; discountValue: number } | null>(null);
   const [promoError, setPromoError] = useState("");
   const [checkingPromo, setCheckingPromo] = useState(false);
+  const [sharedId, setSharedId] = useState<string | null>(null);
+
+  function shareService(slot: ServiceSlot) {
+    const param = slot.slug || slot.id;
+    const url = `${window.location.origin}/shop?service=${param}`;
+    if (navigator.share) {
+      navigator.share({ title: slot.serviceName, text: `Đăng ký ${slot.serviceName}`, url });
+    } else {
+      navigator.clipboard.writeText(url);
+      setSharedId(slot.id);
+      setTimeout(() => setSharedId(null), 1500);
+    }
+  }
 
   useEffect(() => {
     fetch("/api/shop/services")
       .then(r => r.json())
       .then(data => {
-        setGrouped(data.services || data);
+        const services: Record<string, ServiceSlot[]> = data.services || data;
+        setGrouped(services);
         if (data.shopDescription) setShopDescription(data.shopDescription);
+        if (data.contactFacebook) setContactFacebook(data.contactFacebook);
+        if (data.contactTelegram) setContactTelegram(data.contactTelegram);
         setLoading(false);
+
+        // Auto-open service from ?service= param (accepts slug or id)
+        const serviceId = searchParams.get("service");
+        if (serviceId) {
+          const allSlots = Object.values(services).flat();
+          const slot = allSlots.find(s => s.slug === serviceId || s.id === serviceId);
+          if (slot && !slot.isFull) {
+            const firstDuration = getAvailableDurations(slot)[0]?.months || 1;
+            setSelected(slot);
+            setForm({ customerPhone: "", lookupPin: "", customerName: "", duration: firstDuration, customerFb: "", customerEmail: "" });
+          }
+        }
       });
-  }, []);
+  }, [searchParams]);
 
   // Check for existing pending orders when phone changes
   useEffect(() => {
@@ -100,10 +154,8 @@ export default function ShopPage() {
 
   function calcTotal(): number {
     if (!selected) return 0;
-    // Use yearlyFee when duration=12 and yearlyFee is set
-    let total = (form.duration === 12 && selected.yearlyFee > 0)
-      ? selected.yearlyFee
-      : selected.monthlyFee * form.duration;
+    const priceMap: Record<number, number> = { 1: selected.price1m, 3: selected.price3m, 6: selected.price6m, 12: selected.price12m };
+    let total = priceMap[form.duration] || 0;
     if (promoApplied) {
       if (promoApplied.discountType === "percent") {
         total = total * (1 - promoApplied.discountValue / 100);
@@ -112,6 +164,12 @@ export default function ShopPage() {
       }
     }
     return Math.round(total);
+  }
+
+  function calcOriginalTotal(): number {
+    if (!selected) return 0;
+    const priceMap: Record<number, number> = { 1: selected.price1m, 3: selected.price3m, 6: selected.price6m, 12: selected.price12m };
+    return priceMap[form.duration] || 0;
   }
 
   async function submitOrder() {
@@ -160,7 +218,7 @@ export default function ShopPage() {
     <div className="flex flex-col gap-6 pb-8">
       {/* Hero */}
       <div className="text-center pt-2">
-        <p className="text-gray-500 text-sm">{shopDescription}</p>
+        <p className="text-gray-600 text-sm">{shopDescription}</p>
       </div>
 
       {loading ? (
@@ -173,31 +231,65 @@ export default function ShopPage() {
         </div>
       ) : (
         entries.map(([type, slots]) => (
-          <section key={type}>
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+          <section key={type} className={entries.length === 1 && slots.length === 1 ? "flex flex-col items-center" : ""}>
+            <h2 className={`text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 ${entries.length === 1 && slots.length === 1 ? "self-start w-full sm:w-120" : ""}`}>
               {slots[0].serviceIcon} {slots[0].serviceName}
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className={slots.length === 1 ? "flex justify-center w-full" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"}>
               {slots.map(slot => (
                 <div
                   key={slot.id}
-                  className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row sm:items-center gap-3"
+                  className={`${slots.length === 1 ? 'w-full sm:w-[480px]' : ''} bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row sm:items-center gap-3`}
                 >
-                  <div className="text-3xl shrink-0">{slot.serviceIcon}</div>
+                  <div className={`text-3xl shrink-0 ${slot.isFull ? "opacity-50 grayscale" : ""}`}>{slot.serviceIcon}</div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{slot.serviceName}</p>
+                    <p className={`font-semibold truncate ${slot.isFull ? "text-gray-400" : "text-gray-900"}`}>{slot.serviceName}</p>
                     <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                      <span className="text-sm font-bold text-blue-600">{formatCurrency(slot.monthlyFee)}/tháng</span>
+                      <span className={`text-sm font-bold ${slot.isFull ? "text-gray-400" : "text-blue-600"}`}>{formatCurrency(getDisplayPrice(slot).price)}{getDisplayPrice(slot).label}</span>
                       <span className="text-gray-300 text-xs">·</span>
-                      <span className="text-xs text-green-600 font-medium">Còn {slot.freeSlots} slot</span>
+                      {slot.isFull
+                        ? <span className="text-xs text-red-400 font-medium">{slot.isSolo ? "Hết tài khoản" : "Hết slot"}</span>
+                        : slot.isSolo
+                          ? <span className="text-xs text-purple-600 font-medium">Còn {slot.freeSlots} tài khoản</span>
+                          : <span className="text-xs text-green-600 font-medium">Còn {slot.freeSlots} slot</span>
+                      }
                     </div>
                   </div>
-                  <button
-                    onClick={() => { setSelected(slot); setForm({ customerPhone: "", lookupPin: "", customerName: "", duration: 1, customerFb: "", customerEmail: "" }); setExistingOrder(null); setPromoCode(""); setPromoApplied(null); setPromoError(""); }}
-                    className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors"
-                  >
-                    Đặt slot
-                  </button>
+                  {slot.isFull ? (
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      {contactFacebook && (
+                        <a href={contactFacebook} target="_blank" rel="noopener noreferrer"
+                          className="flex-1 sm:flex-none px-3 py-2 bg-blue-100 text-blue-700 rounded-xl text-sm font-semibold text-center hover:bg-blue-200 transition-colors">
+                          Inbox Facebook của Đăng
+                        </a>
+                      )}
+                      {contactTelegram && (
+                        <a href={contactTelegram} target="_blank" rel="noopener noreferrer"
+                          className="flex-1 sm:flex-none px-3 py-2 bg-sky-100 text-sky-700 rounded-xl text-sm font-semibold text-center hover:bg-sky-200 transition-colors">
+                          Telegram
+                        </a>
+                      )}
+                      {!contactFacebook && !contactTelegram && (
+                        <span className="px-4 py-2 bg-gray-100 text-gray-400 rounded-xl text-sm font-semibold">Hết slot</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={() => { const firstDuration = getAvailableDurations(slot)[0]?.months || 1; setSelected(slot); setForm({ customerPhone: "", lookupPin: "", customerName: "", duration: firstDuration, customerFb: "", customerEmail: "" }); setExistingOrder(null); setPromoCode(""); setPromoApplied(null); setPromoError(""); }}
+                        className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${slot.isSolo ? "bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800" : "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"}`}
+                      >
+                        {slot.isSolo ? "Mua ngay" : "Đặt slot"}
+                      </button>
+                      <button
+                        onClick={() => shareService(slot)}
+                        title="Chia sẻ dịch vụ này"
+                        className={`px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${sharedId === slot.id ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+                      >
+                        {sharedId === slot.id ? "✓" : "🔗"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -207,9 +299,9 @@ export default function ShopPage() {
 
       {/* Quick lookup link */}
       {!loading && entries.length > 0 && (
-        <div className="text-center">
-          <Link href="/shop/lookup" className="text-sm text-gray-400 hover:text-blue-600 transition-colors">
-            Đã đặt hàng? <span className="underline">Tra cứu đơn hàng</span>
+        <div className="text-center mt-2">
+          <Link href="/shop/lookup" className="text-sm text-gray-500 hover:text-blue-600 transition-colors">
+            Đã đặt hàng? <span className="underline font-medium">Tra cứu đơn hàng</span>
           </Link>
         </div>
       )}
@@ -228,7 +320,7 @@ export default function ShopPage() {
               <span className="text-3xl">{selected.serviceIcon}</span>
               <div>
                 <p className="font-bold text-gray-900">{selected.serviceName}</p>
-                <p className="text-sm text-blue-600 font-semibold">{formatCurrency(selected.monthlyFee)}/tháng</p>
+                <p className="text-sm text-blue-600 font-semibold">{formatCurrency(getDisplayPrice(selected).price)}{getDisplayPrice(selected).label}</p>
               </div>
               <button onClick={() => setSelected(null)} className="ml-auto text-gray-400 text-xl hover:text-gray-600">✕</button>
             </div>
@@ -237,7 +329,7 @@ export default function ShopPage() {
               {/* PIN field — MOVED TO TOP */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mã PIN tra cứu <span className="text-red-400 font-normal">*</span> <span className="text-gray-400 font-normal">(4 số, để xem tài khoản sau)</span>
+                  Mã PIN tra cứu <span className="text-red-400 font-normal">*</span> <span className="text-gray-500 font-normal">(4 số để xem tài khoản)</span>
                 </label>
                 <input
                   type="text"
@@ -247,7 +339,7 @@ export default function ShopPage() {
                   placeholder="VD: 1234"
                   value={form.lookupPin}
                   onChange={e => setForm(f => ({ ...f, lookupPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
                   autoFocus
                 />
                 {form.lookupPin.length === 0 ? (
@@ -298,28 +390,25 @@ export default function ShopPage() {
               </div>
 
               {/* Duration selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Thời hạn đăng ký *</label>
-                <select
-                  value={form.duration}
-                  onChange={e => setForm(f => ({ ...f, duration: parseInt(e.target.value) }))}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
-                >
-                  <option value={1}>1 tháng — {formatCurrency(selected.monthlyFee * 1)}</option>
-                  <option value={3}>3 tháng — {formatCurrency(selected.monthlyFee * 3)}</option>
-                  <option value={6}>6 tháng — {formatCurrency(selected.monthlyFee * 6)}</option>
-                  <option value={12}>
-                    12 tháng — {selected.yearlyFee > 0
-                      ? `${formatCurrency(selected.yearlyFee)} (tiết kiệm ${Math.round((1 - selected.yearlyFee / (selected.monthlyFee * 12)) * 100)}%)`
-                      : formatCurrency(selected.monthlyFee * 12)}
-                  </option>
-                </select>
-                {form.duration === 12 && selected.yearlyFee > 0 && (
-                  <p className="text-xs text-green-600 mt-1">
-                    🎉 Giá gốc <span className="line-through text-gray-400">{formatCurrency(selected.monthlyFee * 12)}</span> → <strong>{formatCurrency(selected.yearlyFee)}</strong>
-                  </p>
-                )}
-              </div>
+              {(() => {
+                const durations = getAvailableDurations(selected);
+                return durations.length > 1 ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Thời hạn đăng ký *</label>
+                    <select
+                      value={form.duration}
+                      onChange={e => setForm(f => ({ ...f, duration: parseInt(e.target.value) }))}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                    >
+                      {durations.map(d => (
+                        <option key={d.months} value={d.months}>
+                          {d.label} — {formatCurrency(d.price)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null;
+              })()}
 
               {/* Email field — shown when account requires email (Canva etc.) */}
               {selected.requireEmail && (
@@ -373,9 +462,9 @@ export default function ShopPage() {
                       type="button"
                       onClick={applyPromo}
                       disabled={!promoCode.trim() || checkingPromo}
-                      className="px-4 py-3 bg-blue-100 text-blue-700 rounded-xl text-sm font-semibold hover:bg-blue-200 disabled:opacity-40 transition-colors shrink-0"
+                      className="px-4 py-3 bg-blue-100 text-blue-700 rounded-xl text-sm font-semibold hover:bg-blue-200 disabled:opacity-40 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors shrink-0"
                     >
-                      {checkingPromo ? "..." : "Áp dụng"}
+                      {checkingPromo ? "..." : promoCode.trim() ? "Áp dụng" : "Nhập mã"}
                     </button>
                   )}
                 </div>
@@ -391,9 +480,7 @@ export default function ShopPage() {
             {/* Total with discount */}
             {promoApplied && (
               <div className="flex items-center justify-between bg-green-50 rounded-xl px-4 py-2.5 text-sm">
-                <span className="text-gray-600">Tổng gốc: <span className="line-through">{formatCurrency(
-                  form.duration === 12 && selected.yearlyFee > 0 ? selected.yearlyFee : selected.monthlyFee * form.duration
-                )}</span></span>
+                <span className="text-gray-600">Tổng gốc: <span className="line-through">{formatCurrency(calcOriginalTotal())}</span></span>
                 <span className="font-bold text-green-700">→ {formatCurrency(calcTotal())}</span>
               </div>
             )}
@@ -405,7 +492,7 @@ export default function ShopPage() {
             >
               {submitting ? "Đang xử lý..." : `Tiếp tục → Thanh toán ${formatCurrency(calcTotal())}`}
             </button>
-            <p className="text-xs text-gray-400 text-center">
+            <p className="text-xs text-gray-500 text-center">
               Đơn hàng có hiệu lực 2 giờ. Thanh toán để xác nhận đăng ký.
             </p>
           </div>

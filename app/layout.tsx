@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Đăng Tài Khoảng",
+  title: "Đăng Tài Khoản",
   description: "Dịch vụ chia sẻ tài khoản ChatGPT, Netflix, Spotify",
 };
 

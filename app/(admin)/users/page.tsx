@@ -3,11 +3,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { formatDate } from "@/lib/utils";
 
 interface User {
   id: string;
   name: string;
   phone: string;
+  createdAt: string;
   slotCount: number;
   hasPending: boolean;
 }
@@ -25,7 +27,7 @@ export default function UsersPage() {
       fetch(`/api/payments?month=${new Date().toISOString().slice(0, 7)}`).then(r => r.json()),
     ]).then(([usersData, subsData, paymentsData]) => {
       const activeSubs = subsData.filter((s: { status: string }) => s.status === "active");
-      const enriched = usersData.map((u: { id: string; name: string; phone: string }) => ({
+      const enriched = usersData.map((u: { id: string; name: string; phone: string; createdAt: string }) => ({
         ...u,
         slotCount: activeSubs.filter((s: { userId: string }) => s.userId === u.id).length,
         hasPending: paymentsData.some((p: { userId: string; status: string }) => p.userId === u.id && p.status === "pending"),
@@ -83,6 +85,7 @@ export default function UsersPage() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 truncate">{u.name}</p>
                   <p className="text-sm text-gray-500 truncate">{u.phone}</p>
+                  <p className="text-xs text-gray-400">Tham gia {formatDate(u.createdAt)}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <span className="text-xs text-gray-400">{u.slotCount} dịch vụ</span>

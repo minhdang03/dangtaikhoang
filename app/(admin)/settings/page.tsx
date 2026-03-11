@@ -22,6 +22,8 @@ export default function SettingsPage() {
     ogImage: "",
     telegramBotToken: "",
     telegramChatId: "",
+    contactFacebook: "",
+    contactTelegram: "",
   });
 
   useEffect(() => {
@@ -39,6 +41,8 @@ export default function SettingsPage() {
         ogImage: data.ogImage || "",
         telegramBotToken: data.telegramBotToken || "",
         telegramChatId: data.telegramChatId || "",
+        contactFacebook: data.contactFacebook || "",
+        contactTelegram: data.contactTelegram || "",
       }));
     });
   }, []);
@@ -66,6 +70,8 @@ export default function SettingsPage() {
       ogImage: form.ogImage,
       telegramBotToken: form.telegramBotToken,
       telegramChatId: form.telegramChatId,
+      contactFacebook: form.contactFacebook,
+      contactTelegram: form.contactTelegram,
     };
     if (form.newPassword) {
       payload.adminPassword = form.newPassword;
@@ -197,6 +203,24 @@ export default function SettingsPage() {
             <p>Khi có đơn hàng mới, bot sẽ gửi thông báo kèm nút Duyệt/Từ chối.</p>
             <p className="text-gray-400">Webhook URL: <code className="bg-white border border-gray-200 px-1 rounded">https://dangtaikhoang.minhdanglu.com/api/telegram/webhook</code></p>
           </div>
+        </section>
+
+        {/* Contact links */}
+        <section className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col gap-4">
+          <h2 className="font-semibold text-gray-900">📞 Liên hệ khi hết slot</h2>
+          <p className="text-xs text-gray-400 -mt-2">Hiện nút liên hệ trên shop khi dịch vụ hết slot. Để trống nếu không muốn hiện.</p>
+          <Input
+            label="Facebook (URL trang / Messenger)"
+            placeholder="https://m.me/yourpage"
+            value={form.contactFacebook}
+            onChange={set("contactFacebook")}
+          />
+          <Input
+            label="Telegram (username hoặc link)"
+            placeholder="https://t.me/yourusername"
+            value={form.contactTelegram}
+            onChange={set("contactTelegram")}
+          />
         </section>
 
         {/* Password */}

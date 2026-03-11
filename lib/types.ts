@@ -1,4 +1,4 @@
-export type ServiceType = "chatgpt" | "netflix" | "google_drive" | "spotify" | "youtube" | "capcut" | "other";
+export type ServiceType = "chatgpt" | "netflix" | "google_drive" | "spotify" | "youtube" | "capcut" | "canva" | "adobe" | "other";
 
 export interface Service {
   id: string;
@@ -11,15 +11,19 @@ export interface Account {
   id: string;
   serviceId: string;
   label: string;        // "Netflix Gia đình 1"
+  slug?: string;        // friendly URL slug, e.g. "netflix-gia-dinh"
   email: string;
   password: string;     // plain text (personal use only)
   totalSlots: number;
-  monthlyFee: number;   // VND per slot/month
-  yearlyFee: number;    // VND per slot/year (0 = no yearly option)
+  price1m: number;      // VND per 1 month (0 = not sold monthly)
+  price3m: number;      // VND per 3 months (0 = not sold)
+  price6m: number;      // VND per 6 months (0 = not sold)
+  price12m: number;     // VND per 12 months (0 = not sold yearly)
   renewalDate: string;  // ISO date
   notes: string;
   joinLink: string;
   requireEmail: boolean;
+  shareType: "account" | "invite" | "solo"; // "account"=shared email+pass, "invite"=join link, "solo"=dedicated 1 account
   createdAt: string;
 }
 
@@ -70,6 +74,8 @@ export interface Settings {
   ogImage: string;
   telegramBotToken: string;
   telegramChatId: string;
+  contactFacebook: string;
+  contactTelegram: string;
 }
 
 export interface Order {

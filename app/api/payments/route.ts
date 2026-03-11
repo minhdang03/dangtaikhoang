@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
         subscriptionId: sub.id,
         userId: sub.userId,
         accountId: sub.accountId,
-        amount: account.monthlyFee,
+        amount: account.price1m,
         month: body.month,
         status: "pending",
         paidAt: null,

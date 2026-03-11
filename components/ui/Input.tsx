@@ -65,7 +65,7 @@ interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
   label?: string;
 }
 
-export function TextArea({ label, className, id, ...props }: TextAreaProps) {
+export function TextArea({ label, className, id, rows = 3, ...props }: TextAreaProps) {
   return (
     <div className="flex flex-col gap-1">
       {label && (
@@ -75,7 +75,7 @@ export function TextArea({ label, className, id, ...props }: TextAreaProps) {
       )}
       <textarea
         id={id}
-        rows={3}
+        rows={rows}
         className={cn(
           "w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-base outline-none transition-colors resize-none",
           "focus:border-blue-500 focus:ring-2 focus:ring-blue-100",

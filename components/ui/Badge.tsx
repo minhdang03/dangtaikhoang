@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type BadgeVariant = "green" | "red" | "yellow" | "blue" | "gray";
+type BadgeVariant = "green" | "red" | "yellow" | "blue" | "gray" | "danger";
 
 export function Badge({ variant = "gray", children }: { variant?: BadgeVariant; children: React.ReactNode }) {
   const variants: Record<BadgeVariant, string> = {
@@ -9,6 +9,7 @@ export function Badge({ variant = "gray", children }: { variant?: BadgeVariant; 
     yellow: "bg-yellow-100 text-yellow-700",
     blue: "bg-blue-100 text-blue-700",
     gray: "bg-gray-100 text-gray-600",
+    danger: "bg-red-500 text-white",
   };
   return (
     <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", variants[variant])}>

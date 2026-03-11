@@ -7,9 +7,12 @@ import { formatCurrency, daysUntil } from "@/lib/utils";
 
 interface Account {
   id: string;
+  slug?: string;
   label: string;
-  monthlyFee: number;
-  yearlyFee: number;
+  price1m: number;
+  price3m: number;
+  price6m: number;
+  price12m: number;
   totalSlots: number;
   renewalDate: string;
   serviceId: string;
@@ -21,6 +24,14 @@ export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  function copyLink(acc: Account) {
+    const url = `${window.location.origin}/shop?service=${acc.slug || acc.id}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(acc.id);
+    setTimeout(() => setCopiedId(null), 1500);
+  }
 
   useEffect(() => {
     fetch("/api/accounts")
@@ -74,38 +85,41 @@ export default function AccountsPage() {
             const daysLeft = daysUntil(acc.renewalDate);
             const freeSlots = acc.totalSlots - acc.activeSlots;
             return (
-              <Link key={acc.id} href={`/accounts/${acc.id}`}>
-                <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex items-center gap-3">
+              <div key={acc.id} className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex items-center gap-3">
+                <Link href={`/accounts/${acc.id}`} className="flex items-center gap-3 flex-1 min-w-0">
                   <div className="text-3xl">{acc.service?.icon || "📦"}</div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 truncate">{acc.label}</p>
                     <p className="text-sm text-gray-500 truncate">{acc.service?.name}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-400">
-                        {acc.activeSlots}/{acc.totalSlots} slots
-                      </span>
+                      <span className="text-xs text-gray-400">{acc.activeSlots}/{acc.totalSlots} slots</span>
                       <span className="text-xs text-gray-300">·</span>
-                      <span className="text-xs text-gray-400">{formatCurrency(acc.monthlyFee)}/tháng</span>
-                      {acc.yearlyFee > 0 && (
-                        <>
-                          <span className="text-xs text-gray-300">·</span>
-                          <span className="text-xs text-green-600">{formatCurrency(acc.yearlyFee)}/năm</span>
-                        </>
-                      )}
+                      {acc.price1m > 0 && <span className="text-xs text-gray-400">{formatCurrency(acc.price1m)}/th</span>}
+                      {acc.price3m > 0 && <><span className="text-xs text-gray-300">·</span><span className="text-xs text-gray-400">{formatCurrency(acc.price3m)}/3th</span></>}
+                      {acc.price6m > 0 && <><span className="text-xs text-gray-300">·</span><span className="text-xs text-gray-400">{formatCurrency(acc.price6m)}/6th</span></>}
+                      {acc.price12m > 0 && <><span className="text-xs text-gray-300">·</span><span className="text-xs text-green-600">{formatCurrency(acc.price12m)}/năm</span></>}
                     </div>
                   </div>
-                  <div className="text-right flex flex-col items-end gap-1">
-                    <Badge variant={freeSlots === 0 ? "red" : "green"}>
-                      {freeSlots === 0 ? "Đầy" : `Còn ${freeSlots}`}
+                </Link>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <Badge variant={freeSlots === 0 ? "red" : "green"}>
+                    {freeSlots === 0 ? "Đầy" : `Còn ${freeSlots}`}
+                  </Badge>
+                  {daysLeft < 0 ? (
+                    <Badge variant="danger">⚠️ Hết hạn</Badge>
+                  ) : daysLeft <= 7 ? (
+                    <Badge variant={daysLeft <= 3 ? "red" : "yellow"}>
+                      ⚠️ {daysLeft === 0 ? "Hôm nay!" : `Còn ${daysLeft}d`}
                     </Badge>
-                    {daysLeft <= 7 && daysLeft >= 0 && (
-                      <Badge variant={daysLeft <= 3 ? "red" : "yellow"}>
-                        {daysLeft === 0 ? "Hôm nay!" : `${daysLeft}d`}
-                      </Badge>
-                    )}
-                  </div>
+                  ) : null}
+                  <button
+                    onClick={() => copyLink(acc)}
+                    className={`text-xs px-2 py-1 rounded-lg font-medium transition-colors ${copiedId === acc.id ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-blue-600"}`}
+                  >
+                    {copiedId === acc.id ? "✓ Đã copy" : "Copy link"}
+                  </button>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

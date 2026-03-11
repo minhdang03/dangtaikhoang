@@ -61,7 +61,7 @@ export function MobileNav() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
                     isActive
                       ? "bg-blue-50 text-blue-600"
                       : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
@@ -74,7 +74,7 @@ export function MobileNav() {
             })}
             <Link
               href="/shop"
-              className="ml-2 px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+              className="ml-2 px-3 py-1.5 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors whitespace-nowrap"
             >
               🛒 Shop
             </Link>
