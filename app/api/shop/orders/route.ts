@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateVietQRUrl } from "@/lib/vietqr";
 import { settingsDB, promoCodesDB } from "@/lib/db";
+import { confirmOrder } from "@/lib/order-helpers";
+import { sendTelegramMessage, buildOrderNotification } from "@/lib/telegram";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -52,7 +54,8 @@ export async function POST(req: NextRequest) {
     if (promo && promo.active) {
       const notExpired = !promo.expiresAt || new Date(promo.expiresAt) > new Date();
       const hasUses = promo.maxUses === 0 || promo.usedCount < promo.maxUses;
-      if (notExpired && hasUses) {
+      const appliesToAccount = promo.applicableAccountIds.length === 0 || promo.applicableAccountIds.includes(accountId);
+      if (notExpired && hasUses && appliesToAccount) {
         if (promo.discountType === "percent") {
           totalAmount = Math.round(totalAmount * (1 - promo.discountValue / 100));
         } else {
@@ -75,14 +78,42 @@ export async function POST(req: NextRequest) {
       amount: totalAmount,
       duration: durationMonths,
       promoCodeId: validPromoId,
-      status: "pending",
+      status: totalAmount === 0 ? "confirmed" : "pending",
+      customerConfirmed: totalAmount === 0,
       expiresAt,
     },
   });
 
-  // Generate QR URL
+  // Đơn hàng miễn phí → tự động xác nhận
+  if (totalAmount === 0) {
+    await confirmOrder(order);
+    return NextResponse.json({
+      id: order.id,
+      amount: 0,
+      duration: order.duration,
+      serviceName: account.service.name,
+      serviceIcon: account.service.icon,
+      status: "confirmed",
+    }, { status: 201 });
+  }
+
+  // Send Telegram notification (non-blocking)
   const settings = await settingsDB.get();
-  // Build transfer note from template: {sdt} = customerPhone
+  if (settings.telegramBotToken && settings.telegramChatId) {
+    const notification = buildOrderNotification({
+      id: order.id,
+      customerPhone: customerPhone.trim(),
+      customerName: (customerName || "").trim(),
+      serviceName: account.service.name,
+      duration: durationMonths,
+      amount: totalAmount,
+      promoCode: validPromoId ? promoCodeId : undefined,
+    });
+    sendTelegramMessage(settings.telegramBotToken, settings.telegramChatId, notification.text, notification.replyMarkup)
+      .catch(console.error);
+  }
+
+  // Generate QR URL for paid orders
   const transferNote = (settings.transferNote || "{sdt}").replace("{sdt}", customerPhone.trim());
   let qrUrl = null;
   if (settings.accountNo && settings.bankBin) {

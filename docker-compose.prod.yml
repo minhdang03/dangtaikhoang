@@ -1,6 +1,9 @@
 services:
   app:
-    image: ghcr.io/minhdang03/dangtaikhoang:latest
+    image: dangtaikhoang-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: dangtaikhoang-app
     restart: unless-stopped
     ports:

@@ -68,6 +68,8 @@ export interface Settings {
   shopDescription: string;
   transferNote: string;
   ogImage: string;
+  telegramBotToken: string;
+  telegramChatId: string;
 }
 
 export interface Order {
@@ -92,6 +94,7 @@ export interface PromoCode {
   code: string;
   discountType: "percent" | "fixed";
   discountValue: number;
+  applicableAccountIds: string[];
   expiresAt: string | null;
   maxUses: number;
   usedCount: number;

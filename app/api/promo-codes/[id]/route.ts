@@ -19,6 +19,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (body.expiresAt !== undefined) updateData.expiresAt = body.expiresAt || null;
   if (body.maxUses !== undefined) updateData.maxUses = Number(body.maxUses);
   if (body.active !== undefined) updateData.active = body.active;
+  if (body.applicableAccountIds !== undefined) updateData.applicableAccountIds = body.applicableAccountIds;
 
   const updated = await promoCodesDB.update(id, updateData);
   return NextResponse.json(updated);

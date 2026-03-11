@@ -35,6 +35,8 @@ const DEFAULT_SETTINGS: Omit<Settings, never> = {
   shopDescription: "Đăng ký dịch vụ với giá tốt nhất",
   transferNote: "{sdt}",
   ogImage: "",
+  telegramBotToken: "",
+  telegramChatId: "",
 };
 
 // --- Services ---

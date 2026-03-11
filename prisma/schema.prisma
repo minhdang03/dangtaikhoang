@@ -78,17 +78,19 @@ model Payment {
 }
 
 model Settings {
-  id              Int    @id @default(1)
-  bankId          String @default("MB")
-  bankBin         String @default("970422")
-  accountNo       String @default("")
-  accountName     String @default("")
-  reminderDays    Int    @default(7)
-  adminPassword   String @default("admin123")
-  shopTitle       String @default("Dịch vụ chia sẻ")
-  shopDescription String @default("Đăng ký dịch vụ với giá tốt nhất")
-  transferNote    String @default("{sdt}") // template: {sdt} = customer phone
-  ogImage         String @default("")
+  id               Int    @id @default(1)
+  bankId           String @default("MB")
+  bankBin          String @default("970422")
+  accountNo        String @default("")
+  accountName      String @default("")
+  reminderDays     Int    @default(7)
+  adminPassword    String @default("admin123")
+  shopTitle        String @default("Dịch vụ chia sẻ")
+  shopDescription  String @default("Đăng ký dịch vụ với giá tốt nhất")
+  transferNote     String @default("{sdt}") // template: {sdt} = customer phone
+  ogImage          String @default("")
+  telegramBotToken String @default("")
+  telegramChatId   String @default("")
 }
 
 model Order {
@@ -111,13 +113,14 @@ model Order {
 }
 
 model PromoCode {
-  id            String    @id @default(uuid())
-  code          String    @unique
-  discountType  String    @default("percent") // "percent" | "fixed"
-  discountValue Float
-  expiresAt     DateTime?
-  maxUses       Int       @default(0) // 0 = unlimited
-  usedCount     Int       @default(0)
-  active        Boolean   @default(true)
-  createdAt     DateTime  @default(now())
+  id                   String    @id @default(uuid())
+  code                 String    @unique
+  discountType         String    @default("percent") // "percent" | "fixed"
+  discountValue        Float
+  applicableAccountIds String[]  @default([])
+  expiresAt            DateTime?
+  maxUses              Int       @default(0) // 0 = unlimited
+  usedCount            Int       @default(0)
+  active               Boolean   @default(true)
+  createdAt            DateTime  @default(now())
 }

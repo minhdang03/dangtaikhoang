@@ -83,7 +83,7 @@ export default function ShopPage() {
     setCheckingPromo(true);
     setPromoError("");
     try {
-      const res = await fetch(`/api/shop/promo-codes?code=${encodeURIComponent(code)}`);
+      const res = await fetch(`/api/shop/promo-codes?code=${encodeURIComponent(code)}&accountId=${selected?.id || ""}`);
       const data = await res.json();
       if (res.ok) {
         setPromoApplied(data);
@@ -287,7 +287,7 @@ export default function ShopPage() {
 
               {/* Name field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tên của bạn *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tên của bạn <span className="text-gray-400 font-normal">(tùy chọn)</span></label>
                 <input
                   type="text"
                   placeholder="Nguyễn Văn A"

@@ -73,7 +73,7 @@ export function PendingOrders() {
               <span className="text-2xl">{o.serviceIcon}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold text-gray-900">{o.customerName}</p>
+                  <p className="font-semibold text-gray-900">{o.customerName?.trim() || o.customerPhone}</p>
                   {o.customerConfirmed && (
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
                       Đã CK

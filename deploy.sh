@@ -1,13 +1,12 @@
 #!/bin/bash
-# Deploy script for Mac Mini - pull latest image & restart
+# Deploy script for Mac Mini - build locally & restart
 # LaunchAgent runs every 60 seconds (com.dangtaikhoang.deploy.plist)
 
 set -e
 
 # Configuration
 REPO_DIR="/Users/$(whoami)/Documents/NextJS/dangtaikhoang"
-IMAGE_NAME="ghcr.io/minhdang03/dangtaikhoang"
-CONTAINER_NAME="dangtaikhoang-app"
+LOCAL_IMAGE="dangtaikhoang-app:latest"
 LOG_FILE="/var/log/dangtaikhoang-deploy.log"
 
 # Create log file if it doesn't exist
@@ -29,32 +28,26 @@ fi
 cd "$REPO_DIR"
 
 # Pull latest code
-log "Pulling latest code from git..."
+log "Fetching latest code from git..."
 git fetch origin 2>&1 >> "$LOG_FILE"
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse origin/main 2>/dev/null || git rev-parse origin/master 2>/dev/null)
 
 if [ "$LOCAL" != "$REMOTE" ]; then
-  log "New code detected. Deploying..."
+  log "New code detected ($LOCAL → $REMOTE). Deploying..."
 
-  # Pull latest image
-  log "Pulling latest Docker image..."
-  docker pull "$IMAGE_NAME:latest" 2>&1 >> "$LOG_FILE"
+  # Pull latest code
+  git pull origin main 2>&1 >> "$LOG_FILE" || git pull origin master 2>&1 >> "$LOG_FILE"
 
-  # Stop old container
-  if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-    log "Stopping old container..."
-    docker stop "$CONTAINER_NAME" 2>&1 >> "$LOG_FILE"
-    docker rm "$CONTAINER_NAME" 2>&1 >> "$LOG_FILE"
-  fi
+  # Build Docker image locally (ARM native on Mac)
+  log "Building Docker image locally..."
+  docker build -t "$LOCAL_IMAGE" . 2>&1 >> "$LOG_FILE"
 
-  # Start new container
-  log "Starting new container..."
-  cd "$REPO_DIR"
+  # Restart containers
+  log "Restarting containers..."
   docker compose -f docker-compose.prod.yml up -d 2>&1 >> "$LOG_FILE"
 
-  log "Deploy completed successfully"
-  echo "✅ Deployed successfully at $(date)" >> "$LOG_FILE"
+  log "✅ Deploy completed successfully"
 else
   log "No new code. Skipping deploy."
 fi
