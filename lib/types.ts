@@ -24,6 +24,8 @@ export interface Account {
   joinLink: string;
   requireEmail: boolean;
   shareType: "account" | "invite" | "solo"; // "account"=shared email+pass, "invite"=join link, "solo"=dedicated 1 account
+  imapEmail: string;    // Gmail for fetching Netflix OTP (per-account)
+  imapPassword: string; // App Password
   createdAt: string;
 }
 
@@ -76,6 +78,8 @@ export interface Settings {
   telegramChatId: string;
   contactFacebook: string;
   contactTelegram: string;
+  imapEmail: string;
+  imapPassword: string;
 }
 
 export interface Order {

@@ -1,19 +1,25 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const status = req.nextUrl.searchParams.get("status") || "pending";
+
+  const where = status === "all" ? {} : { status };
+
   const orders = await prisma.order.findMany({
-    where: { status: "pending" },
+    where,
     include: { account: { include: { service: true } } },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
   });
 
-  // Auto-mark expired ones
+  // Auto-mark expired pending ones
   const now = new Date();
   const result = await Promise.all(orders.map(async o => {
-    if (new Date(o.expiresAt) < now) {
+    if (o.status === "pending" && new Date(o.expiresAt) < now) {
       await prisma.order.update({ where: { id: o.id }, data: { status: "expired" } });
-      return null;
+      return status === "all" || status === "expired"
+        ? { ...o, status: "expired", createdAt: o.createdAt.toISOString(), expiresAt: o.expiresAt.toISOString() }
+        : null;
     }
     return {
       id: o.id,
@@ -22,6 +28,7 @@ export async function GET() {
       customerPhone: o.customerPhone,
       customerFb: o.customerFb,
       amount: o.amount,
+      duration: o.duration,
       customerConfirmed: o.customerConfirmed,
       paymentProof: o.paymentProof,
       serviceName: o.account.service.name,

@@ -33,6 +33,8 @@ model Account {
   notes         String         @default("")
   joinLink      String         @default("")
   requireEmail  Boolean        @default(false)
+  imapEmail     String         @default("")
+  imapPassword  String         @default("")
   createdAt     DateTime       @default(now())
   subscriptions Subscription[]
   payments      Payment[]
@@ -97,6 +99,8 @@ model Settings {
   telegramChatId    String @default("")
   contactFacebook   String @default("")
   contactTelegram   String @default("")
+  imapEmail         String @default("")
+  imapPassword      String @default("")
 }
 
 model Order {

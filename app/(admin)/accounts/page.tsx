@@ -80,43 +80,48 @@ export default function AccountsPage() {
       ) : filtered.length === 0 ? (
         <p className="text-center py-6 text-gray-400 text-sm">Không tìm thấy kết quả nào.</p>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
           {filtered.map((acc) => {
             const daysLeft = daysUntil(acc.renewalDate);
             const freeSlots = acc.totalSlots - acc.activeSlots;
+            const lowestPrice = [acc.price1m, acc.price3m, acc.price6m, acc.price12m].find(p => p > 0);
+            const isExpiring = daysLeft <= 7;
             return (
               <div key={acc.id} className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex items-center gap-3">
                 <Link href={`/accounts/${acc.id}`} className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="text-3xl">{acc.service?.icon || "📦"}</div>
+                  <div className={`text-3xl shrink-0 ${freeSlots === 0 ? "opacity-50 grayscale" : ""}`}>{acc.service?.icon || "📦"}</div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 truncate">{acc.label}</p>
-                    <p className="text-sm text-gray-500 truncate">{acc.service?.name}</p>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs text-gray-400">{acc.service?.name}</span>
+                      <span className="text-gray-200 text-xs">·</span>
                       <span className="text-xs text-gray-400">{acc.activeSlots}/{acc.totalSlots} slots</span>
-                      <span className="text-xs text-gray-300">·</span>
-                      {acc.price1m > 0 && <span className="text-xs text-gray-400">{formatCurrency(acc.price1m)}/th</span>}
-                      {acc.price3m > 0 && <><span className="text-xs text-gray-300">·</span><span className="text-xs text-gray-400">{formatCurrency(acc.price3m)}/3th</span></>}
-                      {acc.price6m > 0 && <><span className="text-xs text-gray-300">·</span><span className="text-xs text-gray-400">{formatCurrency(acc.price6m)}/6th</span></>}
-                      {acc.price12m > 0 && <><span className="text-xs text-gray-300">·</span><span className="text-xs text-green-600">{formatCurrency(acc.price12m)}/năm</span></>}
+                      {lowestPrice && <>
+                        <span className="text-gray-200 text-xs">·</span>
+                        <span className="text-xs text-gray-400">từ {formatCurrency(lowestPrice)}</span>
+                      </>}
                     </div>
                   </div>
                 </Link>
-                <div className="flex flex-col items-end gap-1.5 shrink-0">
-                  <Badge variant={freeSlots === 0 ? "red" : "green"}>
-                    {freeSlots === 0 ? "Đầy" : `Còn ${freeSlots}`}
-                  </Badge>
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Status badge: expiry takes priority over slot count */}
                   {daysLeft < 0 ? (
-                    <Badge variant="danger">⚠️ Hết hạn</Badge>
-                  ) : daysLeft <= 7 ? (
+                    <Badge variant="red">⚠️ Hết hạn</Badge>
+                  ) : isExpiring ? (
                     <Badge variant={daysLeft <= 3 ? "red" : "yellow"}>
-                      ⚠️ {daysLeft === 0 ? "Hôm nay!" : `Còn ${daysLeft}d`}
+                      ⚠️ {daysLeft === 0 ? "Hôm nay" : `${daysLeft}d`}
                     </Badge>
-                  ) : null}
+                  ) : freeSlots === 0 ? (
+                    <Badge variant="red">Đầy</Badge>
+                  ) : (
+                    <Badge variant="green">Còn {freeSlots}</Badge>
+                  )}
                   <button
                     onClick={() => copyLink(acc)}
-                    className={`text-xs px-2 py-1 rounded-lg font-medium transition-colors ${copiedId === acc.id ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-blue-600"}`}
+                    title="Copy link shop"
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-colors ${copiedId === acc.id ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-blue-600"}`}
                   >
-                    {copiedId === acc.id ? "✓ Đã copy" : "Copy link"}
+                    {copiedId === acc.id ? "✓" : "🔗"}
                   </button>
                 </div>
               </div>

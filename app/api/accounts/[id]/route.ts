@@ -39,6 +39,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     joinLink: body.joinLink || "",
     requireEmail: body.requireEmail || false,
     shareType: body.shareType || "account",
+    imapEmail: body.imapEmail || "",
+    imapPassword: body.imapPassword || "",
   });
   return NextResponse.json(updated);
 }

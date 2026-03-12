@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { MobileNav } from "@/components/MobileNav";
 import { Toast } from "@/components/ui/Toast";
 import { VersionBadge } from "@/components/VersionBadge";
+
+export const metadata: Metadata = {
+  title: { template: "%s | Quản lý", default: "Quản lý" },
+};
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();

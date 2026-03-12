@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { formatDate } from "@/lib/utils";
 
 interface User {
   id: string;
@@ -78,18 +77,19 @@ export default function UsersPage() {
         <div className="flex flex-col gap-2">
           {filtered.map(u => (
             <Link key={u.id} href={`/users/${u.id}`}>
-              <div className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-xs border border-gray-100">
-                <div className="w-11 h-11 bg-blue-100 rounded-full flex items-center justify-center text-lg font-bold text-blue-700 shrink-0">
-                  {u.name[0]?.toUpperCase()}
+              <div className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-xs border border-gray-100 active:bg-gray-50 transition-colors">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-base font-bold text-blue-700 shrink-0">
+                  {u.name?.[0]?.toUpperCase() || "?"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 truncate">{u.name}</p>
                   <p className="text-sm text-gray-500 truncate">{u.phone}</p>
-                  <p className="text-xs text-gray-400">Tham gia {formatDate(u.createdAt)}</p>
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span className="text-xs text-gray-400">{u.slotCount} dịch vụ</span>
-                  {u.hasPending && <Badge variant="yellow">Còn nợ</Badge>}
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  {u.hasPending && <Badge variant="yellow">⏳ Còn nợ</Badge>}
+                  <span className={`text-xs font-medium ${u.slotCount > 0 ? "text-blue-600" : "text-gray-400"}`}>
+                    {u.slotCount > 0 ? `${u.slotCount} dịch vụ` : "Chưa có"}
+                  </span>
                 </div>
               </div>
             </Link>

@@ -16,6 +16,7 @@ interface ServiceSlot {
   price6m: number;
   price12m: number;
   totalSlots: number;
+  usedSlots: number;
   freeSlots: number;
   isFull: boolean;
   isSolo: boolean;
@@ -215,86 +216,128 @@ export default function ShopPage() {
   const entries = Object.entries(grouped);
 
   return (
-    <div className="flex flex-col gap-6 pb-8">
+    <div className="flex flex-col gap-8 pb-8">
       {/* Hero */}
-      <div className="text-center pt-2">
-        <p className="text-gray-600 text-sm">{shopDescription}</p>
+      <div className="text-center pt-1">
+        <p className="text-gray-500 text-sm">{shopDescription}</p>
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Đang tải...</div>
+        <div className="text-center py-16 text-gray-400">Đang tải...</div>
       ) : entries.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 shadow-sm">
-          <div className="text-4xl mb-3">😔</div>
-          <p className="text-gray-500">Hiện chưa có slot trống.</p>
-          <p className="text-sm text-gray-400 mt-1">Vui lòng quay lại sau.</p>
+          <div className="text-5xl mb-4">😔</div>
+          <p className="font-semibold text-gray-700 mb-1">Hiện chưa có slot trống</p>
+          <p className="text-sm text-gray-400 mb-4">Vui lòng quay lại sau hoặc liên hệ để đặt trước.</p>
+          <div className="flex gap-2 justify-center">
+            {contactFacebook && (
+              <a href={contactFacebook} target="_blank" rel="noopener noreferrer"
+                className="px-4 py-2 bg-blue-100 text-blue-700 rounded-xl text-sm font-semibold hover:bg-blue-200 transition-colors">
+                Inbox Facebook
+              </a>
+            )}
+            {contactTelegram && (
+              <a href={contactTelegram} target="_blank" rel="noopener noreferrer"
+                className="px-4 py-2 bg-sky-100 text-sky-700 rounded-xl text-sm font-semibold hover:bg-sky-200 transition-colors">
+                Telegram
+              </a>
+            )}
+          </div>
         </div>
       ) : (
-        entries.map(([type, slots]) => (
-          <section key={type} className={entries.length === 1 && slots.length === 1 ? "flex flex-col items-center" : ""}>
-            <h2 className={`text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 ${entries.length === 1 && slots.length === 1 ? "self-start w-full sm:w-120" : ""}`}>
-              {slots[0].serviceIcon} {slots[0].serviceName}
-            </h2>
-            <div className={slots.length === 1 ? "flex justify-center w-full" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"}>
-              {slots.map(slot => (
-                <div
-                  key={slot.id}
-                  className={`${slots.length === 1 ? 'w-full sm:w-[480px]' : ''} bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row sm:items-center gap-3`}
-                >
-                  <div className={`text-3xl shrink-0 ${slot.isFull ? "opacity-50 grayscale" : ""}`}>{slot.serviceIcon}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-semibold truncate ${slot.isFull ? "text-gray-400" : "text-gray-900"}`}>{slot.serviceName}</p>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                      <span className={`text-sm font-bold ${slot.isFull ? "text-gray-400" : "text-blue-600"}`}>{formatCurrency(getDisplayPrice(slot).price)}{getDisplayPrice(slot).label}</span>
-                      <span className="text-gray-300 text-xs">·</span>
-                      {slot.isFull
-                        ? <span className="text-xs text-red-400 font-medium">{slot.isSolo ? "Hết tài khoản" : "Hết slot"}</span>
-                        : slot.isSolo
-                          ? <span className="text-xs text-purple-600 font-medium">Còn {slot.freeSlots} tài khoản</span>
-                          : <span className="text-xs text-green-600 font-medium">Còn {slot.freeSlots} slot</span>
-                      }
+        entries.map(([type, slots]) => {
+          const available = slots.filter(s => !s.isFull);
+          const full = slots.filter(s => s.isFull);
+          const first = slots[0];
+          function openModal(slot: ServiceSlot) {
+            const firstDuration = getAvailableDurations(slot)[0]?.months || 1;
+            setSelected(slot);
+            setForm({ customerPhone: "", lookupPin: "", customerName: "", duration: firstDuration, customerFb: "", customerEmail: "" });
+            setExistingOrder(null); setPromoCode(""); setPromoApplied(null); setPromoError("");
+          }
+          return (
+            <section key={type}>
+              {/* Section header: icon + tên nổi bật hơn */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-2xl leading-none">{first.serviceIcon}</span>
+                <h2 className="font-semibold text-gray-800">{first.serviceName}</h2>
+                {full.length > 0 && available.length > 0 && (
+                  <span className="ml-auto text-xs text-gray-400">{full.length} slot đầy</span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {/* Available slots — horizontal card, price first */}
+                {available.map(slot => (
+                  <div key={slot.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 px-4 py-4 active:bg-gray-50 transition-colors">
+                    {/* Left: price + availability */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-1 leading-none">
+                        <span className="text-2xl font-bold text-gray-900">{formatCurrency(getDisplayPrice(slot).price)}</span>
+                        <span className="text-xs text-gray-400">{getDisplayPrice(slot).label}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        {slot.freeSlots <= 2 ? (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0 animate-pulse" />
+                            <span className="text-xs text-orange-600 font-semibold">⚡ Còn {slot.freeSlots} {slot.isSolo ? "tài khoản" : "slot"}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                            <span className="text-xs text-green-600">Còn {slot.freeSlots} {slot.isSolo ? "tài khoản" : "slot"}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  {slot.isFull ? (
-                    <div className="flex gap-2 w-full sm:w-auto">
-                      {contactFacebook && (
-                        <a href={contactFacebook} target="_blank" rel="noopener noreferrer"
-                          className="flex-1 sm:flex-none px-3 py-2 bg-blue-100 text-blue-700 rounded-xl text-sm font-semibold text-center hover:bg-blue-200 transition-colors">
-                          Inbox Facebook của Đăng
-                        </a>
-                      )}
-                      {contactTelegram && (
-                        <a href={contactTelegram} target="_blank" rel="noopener noreferrer"
-                          className="flex-1 sm:flex-none px-3 py-2 bg-sky-100 text-sky-700 rounded-xl text-sm font-semibold text-center hover:bg-sky-200 transition-colors">
-                          Telegram
-                        </a>
-                      )}
-                      {!contactFacebook && !contactTelegram && (
-                        <span className="px-4 py-2 bg-gray-100 text-gray-400 rounded-xl text-sm font-semibold">Hết slot</span>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex gap-2 w-full sm:w-auto">
+                    {/* Right: CTA */}
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
-                        onClick={() => { const firstDuration = getAvailableDurations(slot)[0]?.months || 1; setSelected(slot); setForm({ customerPhone: "", lookupPin: "", customerName: "", duration: firstDuration, customerFb: "", customerEmail: "" }); setExistingOrder(null); setPromoCode(""); setPromoApplied(null); setPromoError(""); }}
-                        className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${slot.isSolo ? "bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800" : "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"}`}
+                        onClick={() => openModal(slot)}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${slot.isSolo ? "bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800" : "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"}`}
                       >
-                        {slot.isSolo ? "Mua ngay" : "Đặt slot"}
+                        {slot.isSolo ? "Mua" : "Đặt slot"}
                       </button>
                       <button
                         onClick={() => shareService(slot)}
-                        title="Chia sẻ dịch vụ này"
-                        className={`px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${sharedId === slot.id ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+                        title="Chia sẻ"
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-colors ${sharedId === slot.id ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400 hover:bg-gray-200"}`}
                       >
                         {sharedId === slot.id ? "✓" : "🔗"}
                       </button>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        ))
+                  </div>
+                ))}
+
+                {/* Full slots — compact, muted */}
+                {full.map(slot => (
+                  <div key={slot.id} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 opacity-60">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-1 leading-none">
+                        <span className="text-base font-medium text-gray-400 line-through">{formatCurrency(getDisplayPrice(slot).price)}</span>
+                        <span className="text-xs text-gray-300">{getDisplayPrice(slot).label}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0" />
+                        <span className="text-xs text-gray-400">{slot.isSolo ? "Hết tài khoản" : "Hết slot"}</span>
+                      </div>
+                    </div>
+                    {(contactFacebook || contactTelegram) && (
+                      <a
+                        href={contactFacebook || contactTelegram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-gray-400 hover:text-blue-600 transition-colors shrink-0"
+                      >
+                        Liên hệ →
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })
       )}
 
       {/* Quick lookup link */}
@@ -313,7 +356,7 @@ export default function ShopPage() {
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-white w-full sm:w-[440px] sm:rounded-2xl rounded-t-3xl p-6 flex flex-col gap-4 max-h-[85vh] overflow-y-auto"
+            className="bg-white w-full sm:w-110 sm:rounded-2xl rounded-t-3xl p-6 flex flex-col gap-4 max-h-[85vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 mb-1">
@@ -326,32 +369,7 @@ export default function ShopPage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              {/* PIN field — MOVED TO TOP */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mã PIN tra cứu <span className="text-red-400 font-normal">*</span> <span className="text-gray-500 font-normal">(4 số để xem tài khoản)</span>
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="\d{4}"
-                  maxLength={4}
-                  placeholder="VD: 1234"
-                  value={form.lookupPin}
-                  onChange={e => setForm(f => ({ ...f, lookupPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
-                  autoFocus
-                />
-                {form.lookupPin.length === 0 ? (
-                  <p className="text-xs text-gray-400 mt-1.5">💡 Tự đặt 4 số dễ nhớ. Bắt buộc để xem tài khoản sau khi admin duyệt.</p>
-                ) : form.lookupPin.length === 4 ? (
-                  <p className="text-xs text-green-600 mt-1.5">✅ Ghi nhớ PIN này để tra cứu tài khoản.</p>
-                ) : (
-                  <p className="text-xs text-red-500 mt-1.5">Nhập đủ 4 số.</p>
-                )}
-              </div>
-
-              {/* Phone field */}
+              {/* Phone field — first */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">SĐT / Zalo *</label>
                 <input
@@ -360,8 +378,8 @@ export default function ShopPage() {
                   value={form.customerPhone}
                   onChange={e => setForm(f => ({ ...f, customerPhone: e.target.value }))}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                  autoFocus
                 />
-                {/* Existing order notice */}
                 {existingOrder && !checkingPhone && (
                   <div className="mt-2 bg-orange-50 border border-orange-100 rounded-xl p-3 text-sm">
                     <p className="text-orange-700">
@@ -389,28 +407,34 @@ export default function ShopPage() {
                 />
               </div>
 
-              {/* Duration selector */}
+              {/* Duration selector — button group */}
               {(() => {
                 const durations = getAvailableDurations(selected);
                 return durations.length > 1 ? (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Thời hạn đăng ký *</label>
-                    <select
-                      value={form.duration}
-                      onChange={e => setForm(f => ({ ...f, duration: parseInt(e.target.value) }))}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
-                    >
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Thời hạn đăng ký</label>
+                    <div className="grid grid-cols-2 gap-2">
                       {durations.map(d => (
-                        <option key={d.months} value={d.months}>
-                          {d.label} — {formatCurrency(d.price)}
-                        </option>
+                        <button
+                          key={d.months}
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, duration: d.months }))}
+                          className={`py-2.5 px-3 rounded-xl text-sm border-2 transition-colors text-left ${
+                            form.duration === d.months
+                              ? "border-blue-500 bg-blue-50 text-blue-700"
+                              : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                          }`}
+                        >
+                          <span className="font-semibold">{d.label}</span>
+                          <span className="block text-xs mt-0.5 font-bold">{formatCurrency(d.price)}</span>
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
                 ) : null;
               })()}
 
-              {/* Email field — shown when account requires email (Canva etc.) */}
+              {/* Email field — shown when account requires email */}
               {selected.requireEmail && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email của bạn <span className="text-red-400">*</span></label>
@@ -427,7 +451,7 @@ export default function ShopPage() {
 
               {/* Facebook field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Link Facebook (tùy chọn)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Link Facebook <span className="text-gray-400 font-normal">(tùy chọn)</span></label>
                 <input
                   type="url"
                   placeholder="https://fb.com/..."
@@ -439,7 +463,7 @@ export default function ShopPage() {
 
               {/* Promo code */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mã giảm giá (tùy chọn)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mã giảm giá <span className="text-gray-400 font-normal">(tùy chọn)</span></label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -475,6 +499,30 @@ export default function ShopPage() {
                   </p>
                 )}
               </div>
+
+              {/* PIN field — cuối cùng */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mã PIN tra cứu <span className="text-red-400 font-normal">*</span> <span className="text-gray-500 font-normal">(4 số để xem tài khoản)</span>
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d{4}"
+                  maxLength={4}
+                  placeholder="VD: 1234"
+                  value={form.lookupPin}
+                  onChange={e => setForm(f => ({ ...f, lookupPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                />
+                {form.lookupPin.length === 0 ? (
+                  <p className="text-xs text-gray-400 mt-1.5">💡 Tự đặt 4 số dễ nhớ. Bắt buộc để xem tài khoản sau khi admin duyệt.</p>
+                ) : form.lookupPin.length === 4 ? (
+                  <p className="text-xs text-green-600 mt-1.5">✅ Ghi nhớ PIN này để tra cứu tài khoản.</p>
+                ) : (
+                  <p className="text-xs text-red-500 mt-1.5">Nhập đủ 4 số.</p>
+                )}
+              </div>
             </div>
 
             {/* Total with discount */}
@@ -490,7 +538,7 @@ export default function ShopPage() {
               disabled={submitting}
               className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-base hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 transition-colors"
             >
-              {submitting ? "Đang xử lý..." : `Tiếp tục → Thanh toán ${formatCurrency(calcTotal())}`}
+              {submitting ? "Đang xử lý..." : calcTotal() === 0 ? "✅ Xác nhận đăng ký miễn phí" : `Tiếp tục → Thanh toán ${formatCurrency(calcTotal())}`}
             </button>
             <p className="text-xs text-gray-500 text-center">
               Đơn hàng có hiệu lực 2 giờ. Thanh toán để xác nhận đăng ký.
