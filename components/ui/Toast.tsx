@@ -16,7 +16,8 @@ export function Toast() {
       const { message, type } = (e as CustomEvent).detail;
       const id = Date.now();
       setToasts((prev) => [...prev, { id, message, type }]);
-      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 2500);
+      const duration = type === "error" ? 5000 : 2500;
+      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), duration);
     };
     window.addEventListener("show-toast", handler);
     return () => window.removeEventListener("show-toast", handler);
@@ -29,7 +30,7 @@ export function Toast() {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg text-white animate-fade-in ${
+          className={`px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg text-white animate-fade-in max-w-sm text-center ${
             t.type === "error" ? "bg-red-500" : "bg-gray-900"
           }`}
         >

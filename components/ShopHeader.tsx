@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 
 export function ShopHeader({ title, isAdmin }: { title: string; isAdmin?: boolean }) {
   const pathname = usePathname();
@@ -9,28 +8,21 @@ export function ShopHeader({ title, isAdmin }: { title: string; isAdmin?: boolea
 
   return (
     <header className="bg-white border-b border-gray-100 px-4 py-3 sticky top-0 z-40">
-      <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
-        <Link href="/shop" className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors truncate flex items-center gap-2">
-          <span className="text-2xl" aria-hidden="true">🚀</span>
+      <div className="max-w-xl mx-auto flex items-center justify-between gap-3">
+        <Link href="/shop" className="font-bold text-gray-900 truncate">
           {title}
         </Link>
         <div className="flex items-center gap-2 shrink-0">
           {isAdmin && (
-            <Link
-              href="/"
-              className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-colors"
-            >
-              ← Quản lý
+            <Link href="/" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+              ← Admin
             </Link>
           )}
           <Link
             href="/shop/lookup"
-            className={cn(
-              "text-sm font-medium px-4 py-2 rounded-xl transition-all duration-200 sm:border",
-              isLookup
-                ? "bg-blue-50 text-blue-600 border-blue-200"
-                : "text-gray-600 border-gray-100 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-200 sm:shadow-sm"
-            )}
+            className={`text-sm font-medium px-3.5 py-1.5 rounded-xl transition-colors ${
+              isLookup ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
           >
             🔍 Tra cứu
           </Link>

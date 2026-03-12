@@ -58,26 +58,12 @@ export default function ShopPage() {
   const [submitting, setSubmitting] = useState(false);
   const [existingOrder, setExistingOrder] = useState<{ id: string; serviceName: string } | null>(null);
   const [checkingPhone, setCheckingPhone] = useState(false);
-  const [shopDescription, setShopDescription] = useState("Đăng ký dịch vụ với giá tốt nhất");
   const [contactFacebook, setContactFacebook] = useState("");
   const [contactTelegram, setContactTelegram] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState<{ id: string; code: string; discountType: string; discountValue: number } | null>(null);
   const [promoError, setPromoError] = useState("");
   const [checkingPromo, setCheckingPromo] = useState(false);
-  const [sharedId, setSharedId] = useState<string | null>(null);
-
-  function shareService(slot: ServiceSlot) {
-    const param = slot.slug || slot.id;
-    const url = `${window.location.origin}/shop?service=${param}`;
-    if (navigator.share) {
-      navigator.share({ title: slot.serviceName, text: `Đăng ký ${slot.serviceName}`, url });
-    } else {
-      navigator.clipboard.writeText(url);
-      setSharedId(slot.id);
-      setTimeout(() => setSharedId(null), 1500);
-    }
-  }
 
   useEffect(() => {
     fetch("/api/shop/services")
@@ -85,7 +71,6 @@ export default function ShopPage() {
       .then(data => {
         const services: Record<string, ServiceSlot[]> = data.services || data;
         setGrouped(services);
-        if (data.shopDescription) setShopDescription(data.shopDescription);
         if (data.contactFacebook) setContactFacebook(data.contactFacebook);
         if (data.contactTelegram) setContactTelegram(data.contactTelegram);
         setLoading(false);
@@ -213,14 +198,32 @@ export default function ShopPage() {
     }
   }
 
-  const entries = Object.entries(grouped);
+  // Sort sections: có slot available lên trước, all-full xuống cuối
+  const entries = Object.entries(grouped).sort(([, aSlots], [, bSlots]) => {
+    const aAvail = aSlots.some(s => !s.isFull) ? 0 : 1;
+    const bAvail = bSlots.some(s => !s.isFull) ? 0 : 1;
+    return aAvail - bAvail;
+  });
 
   return (
     <div className="flex flex-col gap-8 pb-8">
-      {/* Hero */}
-      <div className="text-center pt-1">
-        <p className="text-gray-500 text-sm">{shopDescription}</p>
-      </div>
+      {/* Contact strip */}
+      {!loading && (contactFacebook || contactTelegram) && (
+        <div className="flex items-center justify-center gap-2 flex-wrap -mb-2">
+          {contactFacebook && (
+            <a href={contactFacebook} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-blue-600 font-medium px-3 py-1.5 bg-blue-50 rounded-full hover:bg-blue-100 transition-colors">
+              💬 Facebook
+            </a>
+          )}
+          {contactTelegram && (
+            <a href={contactTelegram} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-sky-600 font-medium px-3 py-1.5 bg-sky-50 rounded-full hover:bg-sky-100 transition-colors">
+              ✈️ Telegram
+            </a>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-16 text-gray-400">Đang tải...</div>
@@ -257,83 +260,66 @@ export default function ShopPage() {
           }
           return (
             <section key={type}>
-              {/* Section header: icon + tên nổi bật hơn */}
+              {/* Section header */}
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-2xl leading-none">{first.serviceIcon}</span>
                 <h2 className="font-semibold text-gray-800">{first.serviceName}</h2>
-                {full.length > 0 && available.length > 0 && (
-                  <span className="ml-auto text-xs text-gray-400">{full.length} slot đầy</span>
-                )}
               </div>
 
-              <div className="flex flex-col gap-2">
-                {/* Available slots — horizontal card, price first */}
-                {available.map(slot => (
-                  <div key={slot.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 px-4 py-4 active:bg-gray-50 transition-colors">
-                    {/* Left: price + availability */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-1 leading-none">
-                        <span className="text-2xl font-bold text-gray-900">{formatCurrency(getDisplayPrice(slot).price)}</span>
-                        <span className="text-xs text-gray-400">{getDisplayPrice(slot).label}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-1.5">
+              <div className="flex flex-col gap-3">
+                {/* Available slots */}
+                {available.map(slot => {
+                  const { price, label } = getDisplayPrice(slot);
+                  return (
+                    <div
+                      key={slot.id}
+                      onClick={() => openModal(slot)}
+                      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 cursor-pointer active:scale-[0.98] transition-transform"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-xl font-bold text-gray-900">{formatCurrency(price)}</span>
+                          <span className="text-xs text-gray-400">{label}</span>
+                        </div>
                         {slot.freeSlots <= 2 ? (
-                          <>
-                            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0 animate-pulse" />
-                            <span className="text-xs text-orange-600 font-semibold">⚡ Còn {slot.freeSlots} {slot.isSolo ? "tài khoản" : "slot"}</span>
-                          </>
+                          <span className="text-xs text-orange-600 font-semibold">⚡ Còn {slot.freeSlots} {slot.isSolo ? "tk" : "slot"}</span>
                         ) : (
-                          <>
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-                            <span className="text-xs text-green-600">Còn {slot.freeSlots} {slot.isSolo ? "tài khoản" : "slot"}</span>
-                          </>
+                          <span className="text-xs text-green-600 font-medium">Còn {slot.freeSlots} {slot.isSolo ? "tk" : "slot"}</span>
                         )}
                       </div>
+                      <div className="mt-3">
+                        <div className={`w-full text-center py-2.5 rounded-xl text-sm font-semibold ${slot.isSolo ? "bg-purple-600 text-white" : "bg-blue-600 text-white"}`}>
+                          {slot.isSolo ? "Mua ngay" : "Đặt hàng"}
+                        </div>
+                      </div>
                     </div>
-                    {/* Right: CTA */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => openModal(slot)}
-                        className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${slot.isSolo ? "bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800" : "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"}`}
-                      >
-                        {slot.isSolo ? "Mua" : "Đặt slot"}
-                      </button>
-                      <button
-                        onClick={() => shareService(slot)}
-                        title="Chia sẻ"
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-colors ${sharedId === slot.id ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400 hover:bg-gray-200"}`}
-                      >
-                        {sharedId === slot.id ? "✓" : "🔗"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
 
-                {/* Full slots — compact, muted */}
-                {full.map(slot => (
-                  <div key={slot.id} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 opacity-60">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-1 leading-none">
-                        <span className="text-base font-medium text-gray-400 line-through">{formatCurrency(getDisplayPrice(slot).price)}</span>
-                        <span className="text-xs text-gray-300">{getDisplayPrice(slot).label}</span>
+                {/* Full slots — vẫn cho đặt hàng (chờ admin bổ sung account) */}
+                {full.map(slot => {
+                  const { price, label } = getDisplayPrice(slot);
+                  return (
+                    <div
+                      key={slot.id}
+                      onClick={() => openModal(slot)}
+                      className="bg-white rounded-2xl border border-dashed border-gray-200 p-4 cursor-pointer active:scale-[0.98] transition-transform"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-xl font-bold text-gray-900">{formatCurrency(price)}</span>
+                          <span className="text-xs text-gray-400">{label}</span>
+                        </div>
+                        <span className="text-xs bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full font-medium">Sắp có</span>
                       </div>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0" />
-                        <span className="text-xs text-gray-400">{slot.isSolo ? "Hết tài khoản" : "Hết slot"}</span>
+                      <div className="mt-3">
+                        <div className="w-full text-center py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-600">
+                          Đặt trước
+                        </div>
                       </div>
                     </div>
-                    {(contactFacebook || contactTelegram) && (
-                      <a
-                        href={contactFacebook || contactTelegram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-gray-400 hover:text-blue-600 transition-colors shrink-0"
-                      >
-                        Liên hệ →
-                      </a>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           );
