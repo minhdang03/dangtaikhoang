@@ -216,11 +216,24 @@ export default function ShopPage() {
   const entries = Object.entries(grouped);
 
   return (
-    <div className="flex flex-col gap-8 pb-8">
-      {/* Hero */}
-      <div className="text-center pt-1">
-        <p className="text-gray-500 text-sm">{shopDescription}</p>
-      </div>
+    <div className="flex flex-col gap-6 pb-8">
+      {/* Contact strip */}
+      {!loading && (contactFacebook || contactTelegram) && (
+        <div className="flex items-center justify-center gap-2 flex-wrap -mb-2">
+          {contactFacebook && (
+            <a href={contactFacebook} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-blue-600 font-medium px-3 py-1.5 bg-blue-50 rounded-full hover:bg-blue-100 transition-colors">
+              💬 Facebook
+            </a>
+          )}
+          {contactTelegram && (
+            <a href={contactTelegram} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-sky-600 font-medium px-3 py-1.5 bg-sky-50 rounded-full hover:bg-sky-100 transition-colors">
+              ✈️ Telegram
+            </a>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-16 text-gray-400">Đang tải...</div>
