@@ -36,6 +36,8 @@ export async function POST(req: NextRequest) {
     joinLink: body.joinLink || "",
     requireEmail: body.requireEmail || false,
     shareType: body.shareType || "account",
+    imapEmail: body.imapEmail || "",
+    imapPassword: body.imapPassword || "",
   });
   return NextResponse.json(account, { status: 201 });
 }

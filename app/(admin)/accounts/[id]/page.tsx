@@ -13,8 +13,10 @@ interface Slot {
   userId: string;
   slotLabel: string;
   startDate: string;
+  endDate: string;
+  duration: number;
   status: string;
-  user?: { id: string; name: string; phone: string };
+  user?: { id: string; name: string; phone: string; fbLink?: string };
 }
 
 interface AccountDetail {
@@ -30,6 +32,8 @@ interface AccountDetail {
   renewalDate: string;
   notes: string;
   service?: { icon: string; name: string };
+  imapEmail: string;
+  imapPassword: string;
   slots: Slot[];
   activeSlots: number;
 }
@@ -45,17 +49,27 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
   const [slotForm, setSlotForm] = useState({ userId: "", slotLabel: "Slot 1", startDate: todayStr });
   const [loading, setLoading] = useState(false);
 
+  // Slot expand/edit state
+  const [expandedSlotId, setExpandedSlotId] = useState<string | null>(null);
+  const [editingSlot, setEditingSlot] = useState<{ slotLabel: string; endDate: string } | null>(null);
+  const [slotSaving, setSlotSaving] = useState(false);
+
   // Netflix code fetcher state
   const [codeFetching, setCodeFetching] = useState<string | null>(null);
   const [codeResult, setCodeResult] = useState<{ value: string; date: string; type: string } | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
+
+  // IMAP config state
+  const [imapForm, setImapForm] = useState({ imapEmail: "", imapPassword: "" });
+  const [imapSaving, setImapSaving] = useState(false);
+  const [imapSaved, setImapSaved] = useState(false);
 
   async function fetchNetflixCode(type: "otp" | "link" | "updatefam") {
     setCodeFetching(type);
     setCodeResult(null);
     setCodeError(null);
     try {
-      const res = await fetch(`/api/codes?type=${type}`);
+      const res = await fetch(`/api/codes?type=${type}&accountId=${id}`);
       const data = await res.json();
       if (!res.ok) setCodeError(data.error || "Lỗi không xác định");
       else if (data.result) setCodeResult(data.result);
@@ -71,8 +85,23 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
       fetch(`/api/accounts/${id}`),
       fetch("/api/users"),
     ]);
-    setAccount(await accRes.json());
+    const acc = await accRes.json();
+    setAccount(acc);
+    setImapForm({ imapEmail: acc.imapEmail || "", imapPassword: acc.imapPassword || "" });
     setUsers(await usersRes.json());
+  }
+
+  async function saveImapConfig() {
+    setImapSaving(true);
+    await fetch(`/api/accounts/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...account, ...imapForm }),
+    });
+    setImapSaving(false);
+    setImapSaved(true);
+    setTimeout(() => setImapSaved(false), 2000);
+    load();
   }
 
   useEffect(() => { load(); }, [id]);
@@ -91,9 +120,37 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
   }
 
   async function removeSlot(subId: string) {
-    if (!window.confirm("Xoá người dùng khỏi slot này?")) return;
     await fetch(`/api/subscriptions/${subId}`, { method: "DELETE" });
+    setExpandedSlotId(null);
+    setEditingSlot(null);
     load();
+  }
+
+  async function saveSlot(slotId: string) {
+    if (!editingSlot) return;
+    setSlotSaving(true);
+    await fetch(`/api/subscriptions/${slotId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editingSlot),
+    });
+    setSlotSaving(false);
+    setExpandedSlotId(null);
+    setEditingSlot(null);
+    load();
+  }
+
+  function toggleSlot(slot: Slot) {
+    if (expandedSlotId === slot.id) {
+      setExpandedSlotId(null);
+      setEditingSlot(null);
+    } else {
+      setExpandedSlotId(slot.id);
+      setEditingSlot({
+        slotLabel: slot.slotLabel,
+        endDate: slot.endDate ? slot.endDate.slice(0, 10) : "",
+      });
+    }
   }
 
   async function deleteAccount() {
@@ -220,6 +277,32 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
               {codeError}
             </div>
           )}
+
+          {/* IMAP config */}
+          <div className="border-t border-gray-100 pt-3 flex flex-col gap-2">
+            <p className="text-xs font-medium text-gray-500">Gmail lấy mã (App Password)</p>
+            <input
+              type="email"
+              placeholder="gmail@gmail.com"
+              value={imapForm.imapEmail}
+              onChange={e => setImapForm(f => ({ ...f, imapEmail: e.target.value }))}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100"
+            />
+            <input
+              type="password"
+              placeholder="App Password (16 ký tự)"
+              value={imapForm.imapPassword}
+              onChange={e => setImapForm(f => ({ ...f, imapPassword: e.target.value }))}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100"
+            />
+            <button
+              onClick={saveImapConfig}
+              disabled={imapSaving}
+              className="py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-blue-700 transition-colors"
+            >
+              {imapSaved ? "✅ Đã lưu" : imapSaving ? "Đang lưu..." : "Lưu cấu hình Gmail"}
+            </button>
+          </div>
         </div>
       )}
 
@@ -271,23 +354,122 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
-            {account.slots.map((slot) => (
-              <div key={slot.id} className="flex items-center gap-3 p-4">
-                <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-700">
-                  {slot.user?.name?.[0]?.toUpperCase() || "?"}
+            {account.slots.map((slot) => {
+              const isExpanded = expandedSlotId === slot.id;
+              const daysLeft = slot.endDate ? daysUntil(slot.endDate) : null;
+              return (
+                <div key={slot.id}>
+                  {/* Clickable row */}
+                  <button
+                    onClick={() => toggleSlot(slot)}
+                    className="w-full flex items-center gap-3 p-4 text-left hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-700 shrink-0">
+                      {slot.user?.name?.[0]?.toUpperCase() || slot.user?.phone?.[0] || "?"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{slot.user?.name || slot.user?.phone || "?"}</p>
+                      <p className="text-xs text-gray-400 truncate">{slot.slotLabel} · {slot.user?.phone} · đến {slot.endDate ? formatDate(slot.endDate) : "?"}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {daysLeft !== null && daysLeft <= 7 && daysLeft >= 0 && (
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${daysLeft <= 3 ? "bg-red-100 text-red-600" : "bg-yellow-100 text-yellow-700"}`}>
+                          {daysLeft === 0 ? "HH" : `${daysLeft}d`}
+                        </span>
+                      )}
+                      {daysLeft !== null && daysLeft < 0 && (
+                        <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">Hết hạn</span>
+                      )}
+                      <span className="text-gray-300 text-sm">{isExpanded ? "▲" : "▼"}</span>
+                    </div>
+                  </button>
+
+                  {/* Expanded inline panel */}
+                  {isExpanded && editingSlot && (
+                    <div className="mx-4 mb-4 bg-blue-50 rounded-xl p-4 flex flex-col gap-3">
+                      {/* User info */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-gray-900">{slot.user?.name || "(chưa đặt tên)"}</p>
+                          <p className="text-xs text-gray-500">{slot.user?.phone}</p>
+                        </div>
+                        <Link href={`/users/${slot.userId}`} className="text-xs text-blue-600 font-medium px-2 py-1 bg-white border border-blue-200 rounded-lg hover:bg-blue-50">
+                          Hồ sơ →
+                        </Link>
+                      </div>
+
+                      {/* Edit fields */}
+                      <div className="flex flex-col gap-2">
+                        <div>
+                          <label className="text-xs text-gray-500 mb-1 block">Tên slot</label>
+                          <input
+                            type="text"
+                            value={editingSlot.slotLabel}
+                            onChange={e => setEditingSlot(s => s ? { ...s, slotLabel: e.target.value } : s)}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 mb-1 block">Hết hạn</label>
+                          <input
+                            type="date"
+                            value={editingSlot.endDate}
+                            onChange={e => setEditingSlot(s => s ? { ...s, endDate: e.target.value } : s)}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Quick renew buttons */}
+                      <div className="flex flex-col gap-1.5">
+                        <p className="text-xs text-gray-500 font-medium">Gia hạn nhanh (từ ngày hết hạn)</p>
+                        <div className="flex gap-1.5 flex-wrap">
+                          {([
+                            { months: 1, label: "1th", price: account.price1m },
+                            { months: 3, label: "3th", price: account.price3m },
+                            { months: 6, label: "6th", price: account.price6m },
+                            { months: 12, label: "1 năm", price: account.price12m },
+                          ] as { months: number; label: string; price: number }[])
+                            .filter(o => o.price > 0)
+                            .map(o => {
+                              const base = editingSlot?.endDate || new Date().toISOString().slice(0, 10);
+                              const newDate = new Date(base);
+                              newDate.setMonth(newDate.getMonth() + o.months);
+                              const newDateStr = newDate.toISOString().slice(0, 10);
+                              return (
+                                <button
+                                  key={o.months}
+                                  onClick={() => setEditingSlot(s => s ? { ...s, endDate: newDateStr } : s)}
+                                  className="px-2.5 py-1.5 bg-white border border-blue-200 text-blue-700 rounded-lg text-xs font-semibold hover:bg-blue-50 transition-colors"
+                                >
+                                  +{o.label}
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => saveSlot(slot.id)}
+                          disabled={slotSaving}
+                          className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-blue-700 transition-colors"
+                        >
+                          {slotSaving ? "Đang lưu..." : "Lưu"}
+                        </button>
+                        <button
+                          onClick={() => { if (window.confirm("Xoá người dùng khỏi slot này?")) removeSlot(slot.id); }}
+                          className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors"
+                        >
+                          Xoá
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{slot.user?.name || "?"}</p>
-                  <p className="text-xs text-gray-400">{slot.slotLabel} · {slot.user?.phone} · từ {formatDate(slot.startDate)}</p>
-                </div>
-                <button
-                  onClick={() => removeSlot(slot.id)}
-                  className="text-red-400 hover:text-red-600 text-sm p-1"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

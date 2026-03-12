@@ -60,6 +60,7 @@ export async function GET(req: NextRequest) {
     });
 
     const accounts = subs.map(s => ({
+      accountId: s.accountId,
       serviceName: s.account.service.name,
       serviceIcon: s.account.service.icon,
       shareType: (s.account as { shareType?: string }).shareType || "account",

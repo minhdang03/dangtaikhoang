@@ -13,6 +13,7 @@ interface PendingOrder {
 }
 
 interface Account {
+  accountId: string;
   serviceName: string;
   serviceIcon: string;
   shareType: "account" | "invite" | "solo";
@@ -33,7 +34,7 @@ interface LookupResult {
   hasPin: boolean | null; // null=user not found, false=no pin set, true=pin set
 }
 
-function OtpFetcher({ phone, pin }: { phone: string; pin: string }) {
+function OtpFetcher({ phone, pin, accountId }: { phone: string; pin: string; accountId: string }) {
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState<{ value: string; date: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +44,7 @@ function OtpFetcher({ phone, pin }: { phone: string; pin: string }) {
     setCode(null);
     setError(null);
     try {
-      const res = await window.fetch(`/api/shop/codes?phone=${encodeURIComponent(phone)}&pin=${encodeURIComponent(pin)}&type=otp`);
+      const res = await window.fetch(`/api/shop/codes?phone=${encodeURIComponent(phone)}&pin=${encodeURIComponent(pin)}&accountId=${encodeURIComponent(accountId)}&type=otp`);
       const data = await res.json();
       if (!res.ok) setError(data.error || "Không lấy được mã");
       else if (data.result) setCode(data.result);
@@ -462,7 +463,7 @@ export default function LookupPage() {
 
               {/* OTP fetcher — show if has Netflix and PIN verified */}
               {result.verified && verifiedPin && result.accounts.some(a => a.serviceName.toLowerCase().includes("netflix")) && (
-                <OtpFetcher phone={phone.trim()} pin={verifiedPin} />
+                <OtpFetcher phone={phone.trim()} pin={verifiedPin} accountId={result.accounts.find(a => a.serviceName.toLowerCase().includes("netflix"))?.accountId || ""} />
               )}
             </section>
           )}

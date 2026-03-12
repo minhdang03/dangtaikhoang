@@ -61,6 +61,16 @@ export async function GET() {
     grouped[type].push(item);
   }
 
+  // Sort within each service group: available > popular/sắp hết > full
+  for (const type of Object.keys(grouped)) {
+    grouped[type].sort((a, b) => {
+      const grpA = a.isFull ? 2 : a.freeSlots <= 2 ? 1 : 0;
+      const grpB = b.isFull ? 2 : b.freeSlots <= 2 ? 1 : 0;
+      if (grpA !== grpB) return grpA - grpB;
+      return b.usedSlots - a.usedSlots; // within same group: more used = more popular
+    });
+  }
+
   return NextResponse.json({
     services: grouped,
     shopDescription: settings.shopDescription || "Đăng ký dịch vụ với giá tốt nhất",
