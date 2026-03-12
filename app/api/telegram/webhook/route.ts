@@ -25,7 +25,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    await confirmOrder(order);
+    // Check account có slot trống — nếu hết, tự tìm account khác
+    const activeCount = await prisma.subscription.count({
+      where: { accountId: order.accountId, status: "active" },
+    });
+
+    let resolvedOrder = order;
+    if (activeCount >= order.account.totalSlots) {
+      const alt = await prisma.account.findFirst({
+        where: {
+          serviceId: order.account.serviceId,
+          id: { not: order.accountId },
+        },
+        include: {
+          _count: { select: { subscriptions: { where: { status: "active" } } } },
+        },
+      });
+
+      if (alt && alt._count.subscriptions < alt.totalSlots) {
+        await prisma.order.update({ where: { id: order.id }, data: { accountId: alt.id } });
+        resolvedOrder = { ...order, accountId: alt.id };
+      } else {
+        await answerCallbackQuery(settings.telegramBotToken, callback.id, `Hết slot! Thêm account mới trước khi duyệt.`);
+        return NextResponse.json({ ok: true });
+      }
+    }
+
+    await confirmOrder(resolvedOrder);
     await answerCallbackQuery(settings.telegramBotToken, callback.id, "Đã duyệt đơn hàng!");
 
     const originalText = callback.message?.text || "";

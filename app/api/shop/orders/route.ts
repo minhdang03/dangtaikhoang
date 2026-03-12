@@ -53,11 +53,12 @@ export async function POST(req: NextRequest) {
         _count: { select: { subscriptions: { where: { status: "active" } } } },
       },
     });
-    if (!alt) return NextResponse.json({ error: "Hết tài khoản, vui lòng liên hệ admin" }, { status: 409 });
-    finalAccount = alt as typeof account;
-  } else if (shareType !== "solo" && account._count.subscriptions >= account.totalSlots) {
-    return NextResponse.json({ error: "Hết slot, vui lòng chọn dịch vụ khác" }, { status: 409 });
+    if (alt) {
+      finalAccount = alt as typeof account;
+    }
+    // Nếu không có alt → vẫn cho đặt hàng (đặt trước), admin sẽ bổ sung account sau
   }
+  // Shared/invite accounts: vẫn cho đặt dù hết slot (đặt trước)
 
   const resolvedAccountId = finalAccount.id;
 

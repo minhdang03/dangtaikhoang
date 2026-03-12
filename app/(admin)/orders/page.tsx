@@ -48,16 +48,21 @@ export default function OrdersPage() {
 
   async function confirm(id: string) {
     setProcessing(id);
-    const res = await fetch(`/api/orders/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "confirmed" }),
-    });
-    if (res.ok) {
-      toast("Đã xác nhận đơn hàng ✓");
-      setOrders(prev => prev.filter(o => o.id !== id));
-    } else {
-      toast("Có lỗi xảy ra", "error");
+    try {
+      const res = await fetch(`/api/orders/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "confirmed" }),
+      });
+      const data = await res.json().catch(() => ({ error: "Có lỗi xảy ra" }));
+      if (res.ok) {
+        toast("Đã xác nhận đơn hàng ✓");
+        setOrders(prev => prev.filter(o => o.id !== id));
+      } else {
+        window.alert(data.error || "Có lỗi xảy ra");
+      }
+    } catch {
+      toast("Lỗi kết nối", "error");
     }
     setProcessing(null);
   }
