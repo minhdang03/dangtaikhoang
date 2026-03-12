@@ -76,6 +76,8 @@ export interface Settings {
   telegramChatId: string;
   contactFacebook: string;
   contactTelegram: string;
+  imapEmail: string;
+  imapPassword: string;
 }
 
 export interface Order {

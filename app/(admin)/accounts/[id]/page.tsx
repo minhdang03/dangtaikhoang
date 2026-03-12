@@ -45,6 +45,27 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
   const [slotForm, setSlotForm] = useState({ userId: "", slotLabel: "Slot 1", startDate: todayStr });
   const [loading, setLoading] = useState(false);
 
+  // Netflix code fetcher state
+  const [codeFetching, setCodeFetching] = useState<string | null>(null);
+  const [codeResult, setCodeResult] = useState<{ value: string; date: string; type: string } | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
+
+  async function fetchNetflixCode(type: "otp" | "link" | "updatefam") {
+    setCodeFetching(type);
+    setCodeResult(null);
+    setCodeError(null);
+    try {
+      const res = await fetch(`/api/codes?type=${type}`);
+      const data = await res.json();
+      if (!res.ok) setCodeError(data.error || "Lỗi không xác định");
+      else if (data.result) setCodeResult(data.result);
+      else setCodeError("Không tìm thấy mã trong email");
+    } catch {
+      setCodeError("Lỗi kết nối");
+    }
+    setCodeFetching(null);
+  }
+
   async function load() {
     const [accRes, usersRes] = await Promise.all([
       fetch(`/api/accounts/${id}`),
@@ -149,6 +170,58 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
           </div>
         )}
       </div>
+
+      {/* Netflix code fetcher — only show for Netflix accounts */}
+      {account.service?.name?.toLowerCase().includes("netflix") && (
+        <div className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col gap-3">
+          <h2 className="font-semibold text-gray-900">🎬 Lấy mã Netflix</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { type: "otp" as const, label: "Mã OTP", icon: "🔢" },
+              { type: "link" as const, label: "Link xác thực", icon: "🔗" },
+              { type: "updatefam" as const, label: "Cập nhật HGĐ", icon: "👨‍👩‍👧" },
+            ].map(({ type, label, icon }) => (
+              <button
+                key={type}
+                onClick={() => fetchNetflixCode(type)}
+                disabled={codeFetching !== null}
+                className="flex flex-col items-center gap-1 py-3 px-2 bg-gray-50 rounded-xl text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors disabled:opacity-50"
+              >
+                <span className="text-lg">{icon}</span>
+                <span>{codeFetching === type ? "Đang lấy..." : label}</span>
+              </button>
+            ))}
+          </div>
+
+          {codeResult && (
+            <div className="bg-green-50 rounded-xl p-3 flex flex-col gap-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-green-700 font-medium">
+                  {codeResult.type === "otp" ? "Mã OTP" : "Link"}
+                </span>
+                <span className="text-xs text-gray-400">{codeResult.date}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-sm text-green-900 break-all flex-1">
+                  {codeResult.value}
+                </span>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(codeResult.value); }}
+                  className="text-xs text-green-700 shrink-0 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          )}
+
+          {codeError && (
+            <div className="bg-red-50 rounded-xl p-3 text-xs text-red-600">
+              {codeError}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Slots */}
       <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">

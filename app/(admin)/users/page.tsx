@@ -80,7 +80,7 @@ export default function UsersPage() {
             <Link key={u.id} href={`/users/${u.id}`}>
               <div className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-xs border border-gray-100">
                 <div className="w-11 h-11 bg-blue-100 rounded-full flex items-center justify-center text-lg font-bold text-blue-700 shrink-0">
-                  {u.name[0]?.toUpperCase()}
+                  {u.name?.[0]?.toUpperCase() || "?"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 truncate">{u.name}</p>

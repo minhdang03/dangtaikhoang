@@ -97,6 +97,8 @@ model Settings {
   telegramChatId    String @default("")
   contactFacebook   String @default("")
   contactTelegram   String @default("")
+  imapEmail         String @default("")
+  imapPassword      String @default("")
 }
 
 model Order {

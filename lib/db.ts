@@ -41,6 +41,8 @@ const DEFAULT_SETTINGS: Omit<Settings, never> = {
   telegramChatId: "",
   contactFacebook: "",
   contactTelegram: "",
+  imapEmail: "",
+  imapPassword: "",
 };
 
 // --- Services ---

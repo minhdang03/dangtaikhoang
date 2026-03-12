@@ -326,32 +326,7 @@ export default function ShopPage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              {/* PIN field — MOVED TO TOP */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mã PIN tra cứu <span className="text-red-400 font-normal">*</span> <span className="text-gray-500 font-normal">(4 số để xem tài khoản)</span>
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="\d{4}"
-                  maxLength={4}
-                  placeholder="VD: 1234"
-                  value={form.lookupPin}
-                  onChange={e => setForm(f => ({ ...f, lookupPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
-                  autoFocus
-                />
-                {form.lookupPin.length === 0 ? (
-                  <p className="text-xs text-gray-400 mt-1.5">💡 Tự đặt 4 số dễ nhớ. Bắt buộc để xem tài khoản sau khi admin duyệt.</p>
-                ) : form.lookupPin.length === 4 ? (
-                  <p className="text-xs text-green-600 mt-1.5">✅ Ghi nhớ PIN này để tra cứu tài khoản.</p>
-                ) : (
-                  <p className="text-xs text-red-500 mt-1.5">Nhập đủ 4 số.</p>
-                )}
-              </div>
-
-              {/* Phone field */}
+              {/* Phone field — first */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">SĐT / Zalo *</label>
                 <input
@@ -360,8 +335,8 @@ export default function ShopPage() {
                   value={form.customerPhone}
                   onChange={e => setForm(f => ({ ...f, customerPhone: e.target.value }))}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                  autoFocus
                 />
-                {/* Existing order notice */}
                 {existingOrder && !checkingPhone && (
                   <div className="mt-2 bg-orange-50 border border-orange-100 rounded-xl p-3 text-sm">
                     <p className="text-orange-700">
@@ -389,28 +364,34 @@ export default function ShopPage() {
                 />
               </div>
 
-              {/* Duration selector */}
+              {/* Duration selector — button group */}
               {(() => {
                 const durations = getAvailableDurations(selected);
                 return durations.length > 1 ? (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Thời hạn đăng ký *</label>
-                    <select
-                      value={form.duration}
-                      onChange={e => setForm(f => ({ ...f, duration: parseInt(e.target.value) }))}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 text-base bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
-                    >
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Thời hạn đăng ký</label>
+                    <div className="grid grid-cols-2 gap-2">
                       {durations.map(d => (
-                        <option key={d.months} value={d.months}>
-                          {d.label} — {formatCurrency(d.price)}
-                        </option>
+                        <button
+                          key={d.months}
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, duration: d.months }))}
+                          className={`py-2.5 px-3 rounded-xl text-sm border-2 transition-colors text-left ${
+                            form.duration === d.months
+                              ? "border-blue-500 bg-blue-50 text-blue-700"
+                              : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                          }`}
+                        >
+                          <span className="font-semibold">{d.label}</span>
+                          <span className="block text-xs mt-0.5 font-bold">{formatCurrency(d.price)}</span>
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
                 ) : null;
               })()}
 
-              {/* Email field — shown when account requires email (Canva etc.) */}
+              {/* Email field — shown when account requires email */}
               {selected.requireEmail && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email của bạn <span className="text-red-400">*</span></label>
@@ -427,7 +408,7 @@ export default function ShopPage() {
 
               {/* Facebook field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Link Facebook (tùy chọn)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Link Facebook <span className="text-gray-400 font-normal">(tùy chọn)</span></label>
                 <input
                   type="url"
                   placeholder="https://fb.com/..."
@@ -439,7 +420,7 @@ export default function ShopPage() {
 
               {/* Promo code */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mã giảm giá (tùy chọn)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mã giảm giá <span className="text-gray-400 font-normal">(tùy chọn)</span></label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -475,6 +456,30 @@ export default function ShopPage() {
                   </p>
                 )}
               </div>
+
+              {/* PIN field — cuối cùng */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mã PIN tra cứu <span className="text-red-400 font-normal">*</span> <span className="text-gray-500 font-normal">(4 số để xem tài khoản)</span>
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d{4}"
+                  maxLength={4}
+                  placeholder="VD: 1234"
+                  value={form.lookupPin}
+                  onChange={e => setForm(f => ({ ...f, lookupPin: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                />
+                {form.lookupPin.length === 0 ? (
+                  <p className="text-xs text-gray-400 mt-1.5">💡 Tự đặt 4 số dễ nhớ. Bắt buộc để xem tài khoản sau khi admin duyệt.</p>
+                ) : form.lookupPin.length === 4 ? (
+                  <p className="text-xs text-green-600 mt-1.5">✅ Ghi nhớ PIN này để tra cứu tài khoản.</p>
+                ) : (
+                  <p className="text-xs text-red-500 mt-1.5">Nhập đủ 4 số.</p>
+                )}
+              </div>
             </div>
 
             {/* Total with discount */}
@@ -490,7 +495,7 @@ export default function ShopPage() {
               disabled={submitting}
               className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-base hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 transition-colors"
             >
-              {submitting ? "Đang xử lý..." : `Tiếp tục → Thanh toán ${formatCurrency(calcTotal())}`}
+              {submitting ? "Đang xử lý..." : calcTotal() === 0 ? "✅ Xác nhận đăng ký miễn phí" : `Tiếp tục → Thanh toán ${formatCurrency(calcTotal())}`}
             </button>
             <p className="text-xs text-gray-500 text-center">
               Đơn hàng có hiệu lực 2 giờ. Thanh toán để xác nhận đăng ký.

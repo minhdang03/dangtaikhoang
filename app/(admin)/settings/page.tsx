@@ -24,6 +24,8 @@ export default function SettingsPage() {
     telegramChatId: "",
     contactFacebook: "",
     contactTelegram: "",
+    imapEmail: "",
+    imapPassword: "",
   });
 
   useEffect(() => {
@@ -43,6 +45,8 @@ export default function SettingsPage() {
         telegramChatId: data.telegramChatId || "",
         contactFacebook: data.contactFacebook || "",
         contactTelegram: data.contactTelegram || "",
+        imapEmail: data.imapEmail || "",
+        imapPassword: data.imapPassword || "",
       }));
     });
   }, []);
@@ -72,6 +76,8 @@ export default function SettingsPage() {
       telegramChatId: form.telegramChatId,
       contactFacebook: form.contactFacebook,
       contactTelegram: form.contactTelegram,
+      imapEmail: form.imapEmail,
+      imapPassword: form.imapPassword,
     };
     if (form.newPassword) {
       payload.adminPassword = form.newPassword;
@@ -221,6 +227,29 @@ export default function SettingsPage() {
             value={form.contactTelegram}
             onChange={set("contactTelegram")}
           />
+        </section>
+
+        {/* IMAP / Gmail lấy mã */}
+        <section className="bg-white rounded-2xl p-4 shadow-xs border border-gray-100 flex flex-col gap-4">
+          <h2 className="font-semibold text-gray-900">📧 Gmail lấy mã Netflix</h2>
+          <p className="text-xs text-gray-400 -mt-2">Tài khoản Gmail nhận email từ Netflix. Dùng App Password (không phải mật khẩu thông thường).</p>
+          <Input
+            label="Gmail"
+            type="email"
+            placeholder="vd: netflixdang@gmail.com"
+            value={form.imapEmail}
+            onChange={set("imapEmail")}
+          />
+          <Input
+            label="App Password (16 ký tự)"
+            type="password"
+            placeholder="xxxx xxxx xxxx xxxx"
+            value={form.imapPassword}
+            onChange={set("imapPassword")}
+          />
+          <div className="bg-gray-50 rounded-xl p-3 text-xs text-gray-500 flex flex-col gap-1">
+            <p>Tạo App Password: <span className="font-medium">Google Account → Bảo mật → Xác minh 2 bước → App Passwords</span></p>
+          </div>
         </section>
 
         {/* Password */}
